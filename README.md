@@ -59,9 +59,7 @@ Main scripts and functions
 test_text:
 	This is a script that generates text files of data in place of BEM-solver. It is used for debugging puposes.
 	As of 5/25/14, it generates 2 simulations, each with 14 electrodes, with a saddle point where the two intersect.
-	The default requires no permutation. Only edit this function if you are certain of what you are doing, but this is 
-	less important for test_text than it is for other non-day-to-day usage functions. It only uses multipoles up to the
-	second order, so there will not be an escape position to calculate in trap_depth.
+	The default requires no permutation. Only edit this function if you are certain of what you are doing, but this 		is less important for test_text than it is for other non-day-to-day usage functions. It only uses 			multipoles up to the second order, so there will not be an escape position to calculate in trap_depth.
 
 analyze_trap: 
     This is the main script which simply calls other scripts. 
@@ -83,13 +81,14 @@ import_data:
     The main thing to remember is that consecutive BEM solver simulations must have overlapping 
     first and last axial positions, i.e. [Z[last]]_simulation[n] = [Z([first]]_simulation[n+1], where Z is along the 
     trap axis. Each simulation is a "cube" of data points, each with a number of coordinates along Z equal to the full
-    lengths of X and Y each, due to BEM-solver limitation. Be sure that you are using the proper permutation in import_data.
+    lengths of X and Y each, due to BEM-solver limitation. 
+    Be sure that you are using the proper permutation in import_data.
     
 get_trapping_field:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
     get_trapping_field adds the grid and electrostatic potential arrays to build the structure 'trap'. 
     It looks through the data structures which BEM solver generated and creates new data structure with a grid 
-    which is centered around the position where you want to trap. You define the trapping position in project_parameters. 
+    which is centered around the position where you want to trap. You define the trapping position in project_parameters.
     At the end of get_trapping_field, the structure 'trap' should contain a field "potentials", with subfields such as 
     trap.potentials.X, trap.potentials.EL_DC1, trap.potentials.EL_RF, etc. It will also have a field "configuration" that
     stores other relevant parameters as they are used by these scripts.
@@ -98,17 +97,14 @@ expand_field:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
     expand_field does the spherical harmonic expansion of the potentials for all the used electrodes. It then stores the 
     harmonic expansion coefficients (excluding that of the RF) in the array trap.configuration.multipoleCoefficients.
-    Typically, expand_field will also compute all the potentials from the spherical harmonic coefficients and replace the 
+    Typically, expand_field will also compute all the potentials from the spherical harmonic coefficients and replace the
     original values with the computed ones. This can be useful as a data smoothing step so that the algorithms which use 
-    numerical derivatives (e.g. in post_process_trap for pseudopotential calculation, find_saddle, trap_depth) work better.
-    However, this may also mirror the potentials along all axes, which can be confusing if unexpected.
+    numerical derivatives (e.g. in post_process_trap for pseudopotential calculation, find_saddle, trap_depth) work 		    better. However, this may also mirror the potentials along all axes, which can be confusing if unexpected.
     It also calls dc_potential to create a field of trap "instance" that is referenced by lower order function.
     
 trap_knobs:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-    trap_knobs calculates the independent multipole control parameters (see G. Littich Master's thesis for an explanation of 
-    what these are). It stores the control parameters in trap.configuration.multipoleControl. It also stores the kernel 
-    vectors of the multipoleControl space in trap.Configuration.multipoleControl, unless the multipoleControls are 
+    trap_knobs calculates the independent multipole control parameters (see G. Littich Master's thesis for an explanation     of what these are). It stores the control parameters in trap.configuration.multipoleControl. It also stores the          kernel vectors of the multipoleControl space in trap.Configuration.multipoleControl, unless the multipoleControls are
     rank deficient. This is also where the electrodeMapping and designation of manualElectrodes becomes relevant,
     as the pseudoinverse is computed with the redundant electrode multipoleCoefficients removed.
     Normally, you are done at this point, you can save the so-called trap.Configuration.multipoleControl array to a file 
@@ -119,30 +115,29 @@ post_process_trap:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
     post_proccees_trap is a function which takes in a set of electrode voltages, an RF frequency, and an amplitude to
     calculate what the trap should look like for the ion. It plots the rf potential, rf pseudopotential, dc potentail, 
-    and total trap potential. Furthermore, it calculates the trap frequencies, trap depth, and trapping position from pfit. 
+    and total trap potential. Furthermore, it calculates the trap frequencies, trap depth, and trap position from pfit. 
     The options for plotting these potentials are: 'no plots', '1d plots', and '2d plots'.
     It updates the trap.instance structure with all these parameters that it has calculated.
     Two obsolete (pre-2009) functionalities of it are: calculating micromotion compensation parameters given a stray 
-    electric field, and calculating a stray electric field given micromotion compensated voltages. You will not use these, 
-    unless you have an interest in the history of science and technology.
+    electric field, and calculating a stray electric field given micromotion compensated voltages. 
+    You will not use these, unless you have an interest in the history of science and technology.
     
 ---------------------------------
 Lower level scripts and functions
 ---------------------------------
 compact_matrix, expand_matrix_el, and expand_matrix mult:
     You should not have to look inside these function, unless you are trying something new (and possibly inappropriate). 
-	compact_matrix uses the elctrodeMapping to combine all electrodes that map to the same generator and then removes 
-	all manual electrodes that are not also redundant by electrodeMapping. The other two functions undo this.
+    compact_matrix uses the elctrodeMapping to combine all electrodes that map to the same generator and then removes
+    all manual electrodes that are not also redundant by electrodeMapping. The other two functions undo this.
 	
 d_e:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-	d_e is a relic of the older functionalities of post_process_trap, but it is still used in the modern script at one place.
-	There it calculates the compensation for the given stray field.
+    d_e is a relic of the older functionalities of post_process_trap, but it is still used in the modern script at one 		    place. There it calculates the compensation for the given stray field.
 	
 dc_potential:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-	dc_potential weights and sums up all electrodes to create a single "instance" field that describes the trap.
-	It is pimarily used in expand_field and post_proccess_trap.
+    dc_potential weights and sums up all electrodes to create a single "instance" field that describes the trap.
+    It is primarily used in expand_field and post_proccess_trap.
 	
 exact_saddle:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
@@ -151,15 +146,13 @@ exact_saddle:
     finds the index of the saddle along the grid vectors, exact_saddle returns the value of the grid vectors themselves.
     
 find_saddle:
-    You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-	find_saddle takes the gradient (electric field) of a potential field and minimizes it to find the saddle point.
-	It returns the index of grid vector corresponding to the saddle, unlike exact_saddle which returns the values.
+    You should not have to look inside this function, unless you are trying something new (and possibly inappropriate).
+    find_saddle takes the gradient (electric field) of a potential field and minimizes it to find the saddle point.
+    It returns the index of grid vector corresponding to the saddle, unlike exact_saddle which returns the values.
 
 mesh_slice:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-	mesh_slice plots 2D plots of a given potential along the three axes individually. It plots point by point along each axis,
-	creating an animation with time acting as the relevant spatial dimension. It can also display a title that changes between 
-	frames, but it moves down the image as it animates. It is only called by plot_potential.
+    mesh_slice plots 2D plots of a given potential along the three axes individually. It plots point by point along each     axis, creating an animation with time acting as the relevant spatial dimension. It can also display a title that         changes between frames, but it moves down the image as it animates. It is only called by plot_potential.
 
 p2d:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
@@ -178,22 +171,19 @@ plot_potential:
     
 plotN:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-    plotN displays the electrode values (excluding the RF) in the geometry given above. It is used for debugging trap_knobs.
+    plotN displays the electrode values (excluding the RF) in the geometry given above. It is used for debuggin              trap_knobs.
     
 spher_harm_exp, spher_harm_cmp, and spher_harm_qlt:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
     spher_harm_exp calculates the sperical harmonic expansion coefficients to fit a given 3D potential, spher_harm_cmp 
-    does the inverse, and spher_harm_qlt determines the fidelity of the expansion by comparing the potential before and after.
-    The first is used by sum_of_e_field for exact_saddle optimazation, while the others are only used by expand_field and 
-    debugging. The multipole naming convention here is based on math-based documentation rather than teh experimentally 
-    convenient naming used in the lab. This mapping is accounted for in project_parameters. 
+    does the inverse, and spher_harm_qlt determines the fidelity of the expansion by comparing the potential before and      after. The first is used by sum_of_e_field for exact_saddle optimazation, while the others are only used by              expand_field and debugging. The multipole naming convention here is based on math-based documentation rather than teh     experimentally convenient naming used in the lab. This mapping is accounted for in project_parameters. 
 
 set_voltages:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
     In the matlab code, this is treated as a higher order function but the python code treats this script as lower order
-    due to its limited variety of uses. In matlab, it is named multipole_set_dc and dnot equivalent to set_voltages there.
+    due to its limited variety of uses. In matlab, it is named multipole_set_dc and not equivalent to set_voltages there.
     It takes multipole parameters or a set of Mathieu parameters, and produces an 1-D array with the voltages you need 
-    to apply to all of the electrodes for the appropriate overall field. The entries corresponding to multipole-controlled
+    to apply to all of the electrodes for the appropriate overall field. Entries corresponding to multipole-controlled
     electrodes receive some particular values. If some electrodes are under manual control (per your definition in 
     project_parameters) then these are set to zero. You can add the values to these electrodes at a higher level 
     (as in project_parameters)
@@ -214,9 +204,5 @@ trap_depth:
 _______________________________________________________________________________________________________________________
 -----------------------------------------------------------------------------------------------------------------------
 To Do:
-
-* Add more plotting flags to the remaining functions
-
-* Join import_data functionality with the now defunct script for importing data from CPO
 
 * Change the length scales to micron, but keep mm for the E and U
