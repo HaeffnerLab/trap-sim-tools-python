@@ -171,7 +171,7 @@ plot_potential:
     
 plotN:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
-    plotN displays the electrode values (excluding the RF) in the geometry given above. It is used for debuggin              trap_knobs.
+    plotN displays the electrode values (excluding the RF) in the geometry given above. It is used for debugging             trap_knobs.
     
 spher_harm_exp, spher_harm_cmp, and spher_harm_qlt:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
