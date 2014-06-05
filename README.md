@@ -176,7 +176,7 @@ plotN:
 spher_harm_exp, spher_harm_cmp, and spher_harm_qlt:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
     spher_harm_exp calculates the sperical harmonic expansion coefficients to fit a given 3D potential, spher_harm_cmp 
-    does the inverse, and spher_harm_qlt determines the fidelity of the expansion by comparing the potential before and      after. The first is used by sum_of_e_field for exact_saddle optimazation, while the others are only used by              expand_field and debugging. The multipole naming convention here is based on math-based documentation rather than teh     experimentally convenient naming used in the lab. This mapping is accounted for in project_parameters. 
+    does the inverse, and spher_harm_qlt determines the fidelity of the expansion by comparing the potential before and      after. The first is used by sum_of_e_field for exact_saddle optimazation, while the others are only used by              expand_field and debugging. The multipole naming convention is implemented here, unlike the matlab code which            implements it in expand_field.
 
 set_voltages:
     You should not have to look inside this function, unless you are trying something new (and possibly inappropriate). 
