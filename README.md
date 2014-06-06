@@ -9,7 +9,9 @@ https://drive.google.com/file/d/0B4X2o4phz6b2aDIzUXM1NHpHRjg/edit?usp=sharing
 Likewise, here is a collection of all the pictures: 
 https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
 
-
+These were created using the default made by test_text.
+Left of the period is the simulation number, or "g" for the combined simulations.
+Please note if the rest is not self-explanatory.
 
 ---------------
 1. Introduction
@@ -27,11 +29,6 @@ XN,YN,ZN,VN,Exn,Eyn,Ezn
 The final three terms correspond to the electric field values which are infrequently used.
 You can find example simulations under eurotrap-pt1.txt etc. These were produced using Kilian Singer's 
 BEMsolver package. You can also create synthetic "simulations" directly with the test_text function.
-
-You can view example plots for reference here: https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
-These were created using the default made by test_text.
-Left of the period is the simulation number, or "g" for the combined simulations.
-Please note if the rest is not self-explanatory.
 
 ---------------------------------------
 2. Preliminaries and naming conventions
