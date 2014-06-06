@@ -13,19 +13,18 @@ The software package includes three scripts: all_functions, project_parameters, 
 2. Trap geometry
 
 We have adapted this library for use with surface electrode traps, but should be able to use it with any other trap geometry. Our convention for numbering a trap with N electrodes, one of which is RF, is as follows: For a linear segmented trap, we start counting on the lower left corner. As you move up along the axis (staying on the same side of the RF rail you count up). When you reach the top, you cross to the right side of the RF rail and start counting at the bottom. When you reach the top, you cross to the inside of the RF rail and count DC electrodes from bottom to top. When you are done counting all the DCs, you count the RF electrode(s). Below is an example with N=12:
-  _______________
-|  05  | |      | |  10  | 
-|____| |      | |____| 
-|  04  | |      | |  09  | 
-|____| |      | |____| 
-|  03  | | 11 | |  08  | 
-|____| |      | |____| 
-|  02  | |      | |  07  | 
-|____| |      | |____| 
-|  01  | |       | |  06  | 
-|____| |___| |____|
-
-
+      ___________________
+     | 05 | |    | | 10 |
+     |____| |    | |____|
+     | 04 | |    | | 09 |
+     |____| |    | |____|
+     | 03 | | 11 | | 08 |
+     |____| |    | |____|
+     | 02 | |    | | 07 |
+     |____| |    | |____|
+     | 01 | |    | | 06 |
+     |____|_|____|_|____|
+     
 3. Multipole coefficients
 
 	This is perhaps both the most important and the most confusing part of our software with respect to the differences between matlab and python. The multipole coefficients to the second order are the constant (const; often eliminated) weighting 1, the electric field components (Ex, Ey, and Ez) weighting x, y, and z, and the second order coefficients (U1 – U5) weighting (x2 – y2)/2, (2z2-x2-y2)/2, xy, yz, and xz respectively. The 2r0 and 2r02 in the denominators are ignored due to our selection of r0 = 1 meter for SI units. 
