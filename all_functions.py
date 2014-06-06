@@ -1004,7 +1004,7 @@ def pfit(trap,E,driveFrequence,driveAmplitude):
  
     #1) find dc potential
     from all_functions import set_voltages,plot_potential,exact_saddle,find_saddle,p2d,trap_depth
-    from project_parameters import dcVoltages,manualElectrodes,weightElectrodes,mass,qe,debug,driveFrequency,driveAmplitude
+    from project_parameters import manualElectrodes,weightElectrodes,mass,qe,debug,driveFrequency,driveAmplitude
     dcVoltages=set_voltages() #should this be set_voltages or from analyze_trap? U is 0 with but no saddle without.
     VL = dc_potential(trap,dcVoltages,manualElectrodes,weightElectrodes,E)
     X=tf.instance.X
