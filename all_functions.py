@@ -666,7 +666,7 @@ def post_process_trap():
     William Python Feb 2014""" 
     #################### 0) assign internal values #################### 
     from project_parameters import manualElectrodes,weightElectrodes,save,debug,qe,mass,E,U1,U2,U3,U4,U5,ax,az,phi
-    from project_parameters import savePath,name,driveAmplitude,driveFrequency,findEfield,justAnalyzeTrap,rfplot,dcplot
+    from project_parameters import savePath,name,driveAmplitude,driveFrequency,justAnalyzeTrap,rfplot,dcplot
     from all_functions import find_saddle,exact_saddle,plot_potential,dc_potential,d_e,pfit,spher_harm_exp
     import numpy as np
     import pickle
@@ -704,10 +704,8 @@ def post_process_trap():
     plot_potential(Vdc/e,X,Y,Z,dcplot,'DC potential (stray field included)','V_{dc} (eV)',[Idum,Jdum,Kdum])
     
     #2.5) there are no longer had d_e or d_c optimization options
-    if findEfield:
-        print('findEfield is no longer relevant')
-    if findCompensation:
-        print('findCompensation is no longer relevant')
+    print('findEfield is no longer relevant')
+    print('findCompensation is no longer relevant')
         
     #3) determine stray field (beginning of justAnalyzeTrap)
     # this option means do not optimize anything, and just analyze the trap; this still uses d_e
