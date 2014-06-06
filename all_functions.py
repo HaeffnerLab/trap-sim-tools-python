@@ -5,9 +5,11 @@ def test_text():
     """Construct a pair of text files representing BEM-solver trap simulations.
     This makes the primary synthetic data structure for testing."""
     import numpy as np
-    from project_parameters import simulationDirectory
+    from project_parameters import simulationDirectory,debug
     low,high = -2,3 # defines data with i,j,k=(-2,-1,0,1,2), symmetric for saddle point at origin
     electrode_count = 14 # number of DC electrodes, including the one equivalent to the RF
+    if debug.calibrate:
+        electrode_count= 9
     axis_length = high-low # number of points along each axis
     electrode_size = axis_length**3 # points per electrode
     e = electrode_size
@@ -23,29 +25,43 @@ def test_text():
                     zlow,zhigh = 0,5
                 for k in range(zlow,zhigh):
                     # there is no DC_0 and the final DC is also the RF
-                    Ex,Ey,Ez = i,-k,j
+                    Ex,Ey,Ez = i,j,k
+                    #Ex,Ey,Ez = i,-k,j
                     U1,U2,U3,U4,U5 = 0.5*(i**2-j**2),0.5*(2*k**2-i**2-j**2),i*j,k*j,i*k
                     # Change to python/math mapping from ion trap mapping
-                    U1,U2,U3,U4,U5 = U3,-U5,U2,-U4,-U1                    
+                    #U1,U2,U3,U4,U5 = U3,-U5,U2,-U4,-U1                    
                     #U1,U2,U3,U4,U5 = U5,U3,U1,U4,U2
-                    U1,U2,U3,U4,U5 = U1/5.6,U2/5.6,U3/27.45,U4/5.6,U5/11.2
-                    Ex,Ey,Ez = Ex/4.25,Ey/6.02,Ez/4.25
-                    RF = U5+10**-6*(j**3-3*i**2*j)
+                    #U1,U2,U3,U4,U5 = U5,U3,U1,U4,U2
+                    #U1,U2,U3,U4,U5 = U1/5.6,U2/5.6,U3/27.45,U4/5.6,U5/11.2
+                    #Ex,Ey,Ez = Ex/4.25,Ey/6.02,Ez/4.25
+                    RF = U1+10**-3*(j**3-3*i**2*j)
                     # assign data points to each electrode
-                    data[:,elem]      = [i,j,k,RF]    # DC_0 aka RF
-                    data[:,elem+e]    = [i,j,k,Ex]    # DC_1
-                    data[:,elem+2*e]  = [i,j,k,Ey]    # DC_2
-                    data[:,elem+3*e]  = [i,j,k,Ez]    # DC_3
-                    data[:,elem+4*e]  = [i,j,k,U1+U2] # DC_4
-                    data[:,elem+5*e]  = [i,j,k,U1+U3] # DC_5
-                    data[:,elem+6*e]  = [i,j,k,U1+U4] # DC_6
-                    data[:,elem+7*e]  = [i,j,k,U1+U5] # DC_7
-                    data[:,elem+8*e]  = [i,j,k,U2+U3] # DC_8
-                    data[:,elem+9*e]  = [i,j,k,U2+U4] # DC_9
-                    data[:,elem+10*e] = [i,j,k,U2+U5] # DC_10
-                    data[:,elem+11*e] = [i,j,k,U3+U4] # DC_11
-                    data[:,elem+12*e] = [i,j,k,U3+U5] # DC_12
-                    data[:,elem+13*e] = [i,j,k,U4+U5] # DC_13
+                    if debug.calibrate:
+                        data[:,elem]      = [i,j,k,RF] # DC_0 aka RF
+                        data[:,elem+e]    = [i,j,k,Ex] # DC_1
+                        data[:,elem+2*e]  = [i,j,k,Ey] # DC_2
+                        data[:,elem+3*e]  = [i,j,k,Ez] # DC_3
+                        data[:,elem+4*e]  = [i,j,k,U1] # DC_4
+                        data[:,elem+5*e]  = [i,j,k,U2] # DC_5
+                        data[:,elem+6*e]  = [i,j,k,U3] # DC_6
+                        data[:,elem+7*e]  = [i,j,k,U4] # DC_7
+                        data[:,elem+8*e]  = [i,j,k,U5] # DC_8
+                            
+                    else:    
+                        data[:,elem]      = [i,j,k,RF]    # DC_0 aka RF
+                        data[:,elem+e]    = [i,j,k,Ex]    # DC_1
+                        data[:,elem+2*e]  = [i,j,k,Ey]    # DC_2
+                        data[:,elem+3*e]  = [i,j,k,Ez]    # DC_3
+                        data[:,elem+4*e]  = [i,j,k,U1+U2] # DC_4
+                        data[:,elem+5*e]  = [i,j,k,U1+U3] # DC_5
+                        data[:,elem+6*e]  = [i,j,k,U1+U4] # DC_6
+                        data[:,elem+7*e]  = [i,j,k,U1+U5] # DC_7
+                        data[:,elem+8*e]  = [i,j,k,U2+U3] # DC_8
+                        data[:,elem+9*e]  = [i,j,k,U2+U4] # DC_9
+                        data[:,elem+10*e] = [i,j,k,U2+U5] # DC_10
+                        data[:,elem+11*e] = [i,j,k,U3+U4] # DC_11
+                        data[:,elem+12*e] = [i,j,k,U3+U5] # DC_12
+                        data[:,elem+13*e] = [i,j,k,U4+U5] # DC_13
 #                     data[:,elem]      = [i,j,k,Ex]    # DC_1
 #                     data[:,elem+e]    = [i,j,k,Ey]    # DC_2
 #                     data[:,elem+2*e]  = [i,j,k,Ez]    # DC_3
@@ -61,7 +77,10 @@ def test_text():
 #                     data[:,elem+12*e] = [i,j,k,0] # DC_13
 #                     data[:,elem+13*e] = [i,j,k,U5]      # DC_14 aka RF
                     elem += 1
-        np.savetxt('{0}synthetic-pt{1}.txt'.format(simulationDirectory,sim),data.T,delimiter=',')
+        if debug.calibrate:
+           np.savetxt('{0}meshless-pt{1}.txt'.format(simulationDirectory,sim),data.T,delimiter=',') 
+        else:
+            np.savetxt('{0}synthetic-pt{1}.txt'.format(simulationDirectory,sim),data.T,delimiter=',')
     return 'test_text constructed, 2 simulations'
 
 def import_data():
@@ -183,13 +202,12 @@ def import_data():
 
         if debug.import_data: # Plot each electrode
             from all_functions import plot_potential
+            print(plot_potential(sim.EL_RF,X,Y,Z,'1D plots','Debug: RF electrode'))
             for el in range(1,ne):                
                 print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
-            print(plot_potential(sim.EL_RF,X,Y,Z,'1D plots','Debug: RF electrode'))
-
-        #3) save the particular simulation as a pickle data structure
+                
+        #5) save the particular simulation as a pickle data structure
         if save == True:
-            #name=savePath+fileName+'_simulation_{}'.format(iterationNumber)+'.pkl'
             name=savePath+fileName+'_simulation_{}'.format(iterationNumber)+'.pkl'
             print ('Saving '+name+' as a data structure...')
             output = open(name,'wb')
@@ -273,7 +291,7 @@ def get_trap():
     else:
         sign=int(pre_sign/abs(pre_sign))
          
-    #5) If position is in the first or last grid, just use that grid.
+    #5) If position is in the first half of the first grid, just use that grid.
     if (index==1) and (sign==-1): 
         print('If position is in the first or last grid, just use that grid.')
         file = open(pathName+'1.pkl','rb')
@@ -353,9 +371,9 @@ def get_trap():
         plt.show()  
         sim = tf.potentials
         from all_functions import plot_potential
+        print(plot_potential(sim.EL_RF,X,Y,Z,'2D plots','Debug: RF electrode'))
         for el in range(1,ne):               
             print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
-        print(plot_potential(sim.EL_RF,X,Y,Z,'1D plots','Debug: RF electrode'))
 
     #10) save new data structure as a pickle    
     if save:
@@ -380,7 +398,7 @@ def expand_field():
     Multipole coefficients only up to order 8 are kept, but the coefficients are calculated up to order L.
     trap is the path to a data structure that contains an instance with the following properties
     .DC is a 3D matrix containing an electric potential and must solve Laplace's equation
-    .x,.y,.z are the vectors that define the grid in three directions
+    .X,.Y,.Z are the vectors that define the grid in three directions
     Xcorrection, Ycorrection: optional correction offsets from the RF saddle point,
                               in case that was wrong by some known offset
     position: the axial position where the ion sits
@@ -410,7 +428,6 @@ def expand_field():
     tf = pickle.load(file)
     file.close()
     V,X,Y,Z=tf.instance.DC,tf.instance.X,tf.instance.Y,tf.instance.Z
-    origin=find_saddle(V,X,Y,Z,3)
     tc=tf.configuration #intermediate shorthand for configuration
     position = tc.position
     tc.EL_RF = tf.potentials.EL_RF
@@ -430,11 +447,14 @@ def expand_field():
     Irf,Jrf,Krf = int(np.floor(X.shape[0]/2)),int(np.floor(Y.shape[0]/2)),int(np.floor(Z.shape[0]/2))
     Xrf,Yrf,Zrf = X[Irf],Y[Jrf],Z[Krf]
     Qrf = spher_harm_exp(tc.EL_RF,Xrf,Yrf,Zrf,X,Y,Z,L)
+    if debug.expand_field: 
+        print Qrf
+        plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     print('Comparing RF potential')
     tc.EL_RF = spher_harm_cmp(Qrf,Xrf,Yrf,Zrf,X,Y,Z,L)
     # these flips only fix x and y, but not z after regen mirrors the array
-    #tc.EL_RF=np.fliplr(tc.EL_RF)
-    #tc.EL_RF=np.flipud(tc.EL_RF)
+    tc.EL_RF=np.fliplr(tc.EL_RF)
+    tc.EL_RF=np.flipud(tc.EL_RF)
     if debug.expand_field: 
         plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
    
@@ -455,19 +475,21 @@ def expand_field():
         multipoleDCVoltages[el-1] = 1 
         E = [0,0,0]
         Vdc = dc_potential(trap,multipoleDCVoltages,np.zeros(NUM_DC),np.zeros(NUM_DC),E) 
-        if debug.expand_field:
-            plot_potential(Vdc,X,Y,Z,'1D plots',('Old EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
-            print('Applying correction to Electrode {} ...'.format(el))
+        #if debug.expand_field:
+            #plot_potential(Vdc,X,Y,Z,'1D plots',('Old EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
+        print('Applying correction to Electrode {} ...'.format(el))
         Q = spher_harm_exp(Vdc,Xrf+Xcorrection,Yrf+Ycorrection,Zrf,X,Y,Z,int(order[el-1]))                       
         print('Regenerating Electrode {} potential...'.format(el))
         tf.potentials['EL_DC_{}'.format(el)]=spher_harm_cmp(Q,Xrf+Xcorrection,Yrf+Ycorrection,Zrf,X,Y,Z,int(order[el-1]))
+        tf.potentials['EL_DC_{}'.format(el)]=np.fliplr(tf.potentials['EL_DC_{}'.format(el)])
+        tf.potentials['EL_DC_{}'.format(el)]=np.flipud(tf.potentials['EL_DC_{}'.format(el)])
         if debug.expand_field:
             print(Q)
             plot_potential(tf.potentials['EL_DC_{}'.format(el)],X,Y,Z,'1D plots',('EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
         check = np.real(Q[0:N].T)[0]
         Mt[:,el-1] = Q[0:N].T
          
-    # Note: There used to be an auxilliary fuinction here that was not used: normalize.
+    # Note: There used to be an auxiliary fuinction here that was not used: normalize.
     #4) Define the multipole Coefficients
     tc.multipoleCoefficients = Mt
     print('expand_field: Size of the multipole coefficient matrix is {}'.format(Mt.shape))
@@ -489,15 +511,15 @@ def trap_knobs():
     Also return matrix multipoleKernel which is the kernel matrix of electrode linear combinations which do nothing to the multipoles.
     The order of multipole coefficients is:
     1/r0**[ x, y, z ] and 
-    1/r0**2*[ (x^2-y^2)/2, (2z^2-x^2-y^2)/2, xy/2 yz/2 xz/2 ], where r0 is 1 mm
-    (unless rescaling is applied)
+    1/r0**2*[ (x^2-y^2)/2, (2z^2-x^2-y^2)/2, xy, yz, xz ], where r0 is 1 mm (unless rescaling is applied)
     Before solving the system, compact the multipoleCoefficient matrix by removing all redundant electrodes.
     After solving the system, expand the multipoleControl matric to include these.
     If the system is underdetermined, then there is no Kernel or regularization.
     """
     print('Executing trap_knobs...')
     #0) Define parameters
-    from project_parameters import position,debug,reg,savePath,name,save,electrodeMapping,manualElectrodes,usedMultipoles,expansionOrder
+    from project_parameters import position,debug,reg,savePath,name,save,electrodeMapping,manualElectrodes,usedMultipoles
+    from project_parameters import expansionOrder,simulationDirectory
     import numpy as np
     import matplotlib.pyplot as plt
     from all_functions import plotN,compact_matrix,expand_matrix_mult,expand_matrix_el
@@ -550,7 +572,7 @@ def trap_knobs():
             fig=plt.figure()
             plt.plot(err)
             plt.title('Error of the fit elements')
-            plotN(P)#[0:len(P)-1])
+            plotN(P)
         C[ii,:] = P.T        
     #3) Helper function From: http://wiki.scipy.org/Cookbook/RankNullspace
     from numpy.linalg import svd
@@ -621,6 +643,13 @@ def trap_knobs():
         output = open(trap,'wb')
         pickle.dump(dataout,output)
         output.close()
+        CT = C.T
+        print CT.shape
+        T = np.zeros(CT.shape[0]*CT.shape[1])
+        for j in range(CT.shape[1]):
+            for i in range(CT.shape[0]):
+                T[j*CT.shape[0]+i] = CT[i,j]
+        np.savetxt(simulationDirectory+name+'.txt',T,delimiter=',')
     return 'Completed trap_knobs.'
 
 def post_process_trap():
@@ -646,8 +675,8 @@ def post_process_trap():
     tf = pickle.load(file)
     file.close()
     VMULT = set_voltages()
-    VMAN = manualElectrodes
-    IMAN = weightElectrodes
+    VMAN = weightElectrodes
+    IMAN = manualElectrodes
     tf.instance.DC = dc_potential(trap,VMULT,VMAN,IMAN,E,True) 
     V,X,Y,Z=tf.instance.DC,tf.instance.X,tf.instance.Y,tf.instance.Z               
     RFampl = driveAmplitude         # drive amplitude of RF
@@ -676,7 +705,9 @@ def post_process_trap():
     
     #2.5) there are no longer had d_e or d_c optimization options
     if findEfield:
-        print('findEfield no longer relevant')
+        print('findEfield is no longer relevant')
+    if findCompensation:
+        print('findCompensation is no longer relevant')
         
     #3) determine stray field (beginning of justAnalyzeTrap)
     # this option means do not optimize anything, and just analyze the trap; this still uses d_e
@@ -1227,8 +1258,8 @@ def find_saddle(V,X,Y,Z,dim,Z0=None):
  
 def mesh_slice(V,n,X,Y,Z): 
     """Plots successive slices of matrix V in the direction given by n.
-    n=1[I],2[J],3[K]
-    x,y,z are vectors that define the grid in three dimensions
+    n=0[I],1[J],2[K]
+    X,Y,X are vectors that define the grid in three dimensions
     William Python Jan 2014
     """
     import numpy as np
@@ -1400,8 +1431,10 @@ def plotN(trap,convention=None): # Possible to add in different conventions late
     fig.colorbar(surf)
     return plt.show()
  
-def spher_harm_exp(V,X,Y,Z,Xc,Yc,Zc,Order):
-    """V is a 3D matrix containing an electric potential and must solve Laplace's equation
+def spher_harm_exp(V,Xc,Yc,Zc,X,Y,Z,Order):
+    """http://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics
+
+    V is a 3D matrix containing an electric potential and must solve Laplace's equation
     X,Y,Z are the vectors that define the grid in three directions
       
     Xc,Yc,Zc are the coordinates of the center of the multipoles. (Specifically their values? 3/10/14)
@@ -1420,13 +1453,19 @@ def spher_harm_exp(V,X,Y,Z,Xc,Yc,Zc,Order):
     William Python Jan 2014"""
     import math as mt
     import numpy as np
-    from scipy.special import sph_harm
+    from scipy.special import sph_harm,lpmv
     # Determine dimensions of V.
     s=V.shape
     nx,ny,nz=s[0],s[1],s[2] 
-    # Construct variables from axes.
-    [x,y,z] = np.meshgrid(X-Xc,Y-Yc,Z-Zc) # Matlab was order [y,x,z]; changed 10/19/13.
-    x,y,z=np.ravel(x),np.ravel(y),np.ravel(z) # Replaced reshape, repeated for other functions.
+    # Construct variables from axes; no meshgrid as of 6/4/14
+    x,y,z = np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz))
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                x[i,j,k] = X[i]-Xc
+                y[i,j,k] = Y[j]-Yc
+                z[i,j,k] = Z[k]-Zc
+    x,y,z=np.ravel(x),np.ravel(y),np.ravel(z) 
     r,rt=np.sqrt(x*x+y*y+z*z),np.sqrt(x*x+y*y)
     # Normalize with geometric mean, 3/15/14 (most recently); makes error go down about order of magnitude
     rsort=np.sort(r)
@@ -1463,13 +1502,27 @@ def spher_harm_exp(V,X,Y,Z,Xc,Yc,Zc,Order):
     Yj=np.delete(Yj,0,0) # Eliminate the termporary first row.
     # Convert the 3D DC potential into 1D array.
     # Numerically invert, here the actual expansion takes place and we obtain the expansion coefficients M_{ji}.
-    Yj=Yj.T
+    Yj=np.real(Yj.T)
     Mj=np.linalg.lstsq(Yj,W)
     Mj=Mj[0] # array of coefficients
-    return np.real(Mj)
+    if Order == 2:
+        M = 0*Mj
+        M[0] = Mj[0]/3.34
+        M[1] = Mj[3]/(-2.69)
+        M[2] = Mj[1]/(-2.69)
+        M[3] = Mj[2]/3.8
+        M[4] = Mj[8]/2.24
+        M[5] = Mj[6]/5.49
+        M[6] = Mj[4]/2.24
+        M[7] = Mj[5]/(-2.24)
+        M[8] = Mj[7]/(-2.24)
+        Mj = M
+    return Mj
  
 def spher_harm_cmp(C,Xc,Yc,Zc,Xe,Ye,Ze,Order): 
-    """This function computes the potential V from the spherical harmonic coefficients,
+    """http://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics
+
+    This function computes the potential V from the spherical harmonic coefficients,
     which used to be: V=C1*Y00+C2*Y10+C3*Y11c+C4*Y11s+...
     There the Ynm are chosen to be real, and subscript c corresponds to cos(m*phi) dependence,
     while s is sin(m*phi).
@@ -1499,9 +1552,39 @@ def spher_harm_cmp(C,Xc,Yc,Zc,Xe,Ye,Ze,Order):
                 return
             elif st=='y':
                 break
-    [x,y,z] = np.meshgrid(Xe-Xc,Ye-Yc,Ze-Zc) # order changes from y,x,z 3/9/14
-    s=x.shape
-    nx,ny,nz=s[0],s[1],s[2]
+    if Order > 1: # reorder from spher_harm_exp
+        M = 0*C
+        M[0] = C[0]#*3.34
+        M[1] = C[2]#*(-2.69)
+        M[2] = C[3]#*(-2.69)
+        M[3] = C[1]#*3.8
+        M[4] = C[6]#*2.24
+        M[5] = C[7]#*5.49
+        M[6] = C[5]#*2.24
+        M[7] = C[8]#*(-2.24)
+        M[8] = C[4]#*(-2.24)
+#         M[0] = C[0]*3.34
+#         M[1] = C[2]*(-2.69)
+#         M[2] = C[3]*(-2.69)
+#         M[3] = C[1]*3.8
+#         M[4] = C[6]*2.24
+#         M[5] = C[7]*5.49
+#         M[6] = C[5]*2.24
+#         M[7] = C[8]*(-2.24)
+#         M[8] = C[4]*(-2.24)
+        C = M
+    #[x,y,z] = np.meshgrid(Xe-Xc,Ye-Yc,Ze-Zc) # order changes from y,x,z 3/9/14
+    # Construct variables from axes; no meshgrid as of 6/4/14
+    nx,ny,nz = len(Xe),len(Ye),len(Ze)
+    x,y,z = np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz))
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                x[i,j,k] = Xe[i]-Xc
+                y[i,j,k] = Ye[j]-Yc
+                z[i,j,k] = Ze[k]-Zc
+    #s=x.shape
+    #nx,ny,nz=s[0],s[1],s[2]
     x,y,z=np.ravel(x),np.ravel(y),np.ravel(z) # Replaced reshape, repeat for other functions.
     r,rt=np.sqrt(x*x+y*y+z*z),np.sqrt(x*x+y*y)
     # Normalize with geometric mean, 3/15/14 (most recently); makes error go down about order of magnitude
@@ -1600,7 +1683,7 @@ def sum_of_e_field(r,V,X,Y,Z,exact_saddle=True):
     from project_parameters import debug
     x0,y0,z0=r[0],r[1],r[2]
     from all_functions import spher_harm_exp
-    c=spher_harm_exp(V,X,Y,Z,x0,y0,z0,3) #Update these variables by abstraction.
+    c=spher_harm_exp(V,x0,y0,z0,X,Y,Z,3) #Update these variables by abstraction.
     if debug.soef:
         print('Checking saddle: ({0},{1},{2})'.format(x0,y0,z0))
     s=c**2
