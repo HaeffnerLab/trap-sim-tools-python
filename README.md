@@ -4,10 +4,11 @@ UPDATE: There is now a tutorial available if you would like a more in-depth expl
 https://drive.google.com/file/d/0B4X2o4phz6b2cm9hMkdaVnVILU0/edit?usp=sharing
 
 To follow along, here is a link to an example: 
-https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
+https://drive.google.com/file/d/0B4X2o4phz6b2aDIzUXM1NHpHRjg/edit?usp=sharing
 
 Likewise, here is a collection of all the pictures: 
-https://drive.google.com/file/d/0B4X2o4phz6b2aDIzUXM1NHpHRjg/edit?usp=sharing
+https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
+
 
 
 ---------------
