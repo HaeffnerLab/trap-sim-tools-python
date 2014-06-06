@@ -10,6 +10,8 @@ To do so, this software calculates the voltage of each electrode needed to creat
 
 The software package includes three scripts: all_functions, project_parameters, and analyze_trap. The first is a library of all the functions used at the third, which runs all processes. The second is simply a list of parameters used by the functions, the most volatile of which may be moved to analyze_trap as it once was in the matlab code. 
 
+Pictures to follow along (may be integrated in pdf): https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
+
 2. Trap geometry
 
 We have adapted this library for use with surface electrode traps, but should be able to use it with any other trap geometry. Our convention for numbering a trap with N electrodes, one of which is RF, is as follows: For a linear segmented trap, we start counting on the lower left corner. As you move up along the axis (staying on the same side of the RF rail you count up). When you reach the top, you cross to the right side of the RF rail and start counting at the bottom. When you reach the top, you cross to the inside of the RF rail and count DC electrodes from bottom to top. When you are done counting all the DCs, you count the RF electrode(s). Below is an example with N=12:
