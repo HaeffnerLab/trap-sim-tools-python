@@ -1,5 +1,7 @@
 trap-sim-tools-python
 =====================
+UPDATE: There is now a tutorial available if you would like a more in-depth explanation of how the software works.
+
 ---------------
 1. Introduction
 ---------------
