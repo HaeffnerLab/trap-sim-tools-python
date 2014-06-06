@@ -10,7 +10,9 @@ To do so, this software calculates the voltage of each electrode needed to creat
 
 The software package includes three scripts: all_functions, project_parameters, and analyze_trap. The first is a library of all the functions used at the third, which runs all processes. The second is simply a list of parameters used by the functions, the most volatile of which may be moved to analyze_trap as it once was in the matlab code. 
 
-Pictures to follow along (may be integrated in pdf): https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
+To follow along, here is a link to an example: https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
+
+Likewise, here is a collection of all the pictures: https://drive.google.com/file/d/0B4X2o4phz6b2aDIzUXM1NHpHRjg/edit?usp=sharing
 
 2. Trap geometry
 
