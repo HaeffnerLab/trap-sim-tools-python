@@ -106,7 +106,7 @@ def import_data():
     [startingSimulation,numSimulations] = simCount
     
     # iterate through each simulation text file
-    for iterationNumber in range(startingSimulation,numSimulations+1):        
+    for iterationNumber in range(startingSimulation,startingSimulation+numSimulations):        
         #########################################################################################
         #0) Check if data already exists 
         def fileCheck(iterationNumber):
@@ -153,7 +153,7 @@ def import_data():
         X = coord[:,perm[0]]
         Y = coord[:,perm[1]]
         Z = coord[:,perm[2]]
-                
+
         #3) load all the voltages and E vector into struct using dynamic naming 
         struct=TreeDict() # begin intermediate shorthand.
         for el in range(ne): #el refers to the electrode, +1 is to include EL_0, the RF electrode
@@ -243,11 +243,13 @@ def get_trap():
         print numSim,simCount
         raise Exception('Inconsistency in simulation number. Check project_parameters for consistency.')
     if numSim==1:
-        print('if there is only one simulation, use that one')
+        print('If there is only one simulation, use that one. Same debug as import_data.')
         # This is redundant with the final save but is called here to avoid errors being raised with zLim below.
-        file = open(pathName+'1.pkl','rb')
+        file = open(pathName+str(simCount[0])+'.pkl','rb')
         tf.potentials = pickle.load(file)
         file.close()
+        potential=tf.potentials    # base potential to write over
+        ne=potential.numElectrodes
         trap = tf
         c=trap.configuration
         c.position = position 
@@ -447,9 +449,9 @@ def expand_field():
     Irf,Jrf,Krf = int(np.floor(X.shape[0]/2)),int(np.floor(Y.shape[0]/2)),int(np.floor(Z.shape[0]/2))
     Xrf,Yrf,Zrf = X[Irf],Y[Jrf],Z[Krf]
     Qrf = spher_harm_exp(tc.EL_RF,Xrf,Yrf,Zrf,X,Y,Z,L)
-    if debug.expand_field: 
-        print Qrf
-        plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
+#     if debug.expand_field: 
+#         print Qrf
+#         plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     print('Comparing RF potential')
     tc.EL_RF = spher_harm_cmp(Qrf,Xrf,Yrf,Zrf,X,Y,Z,L)
     # these flips only fix x and y, but not z after regen mirrors the array
@@ -1767,9 +1769,9 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km,debug=False):
         #plt.plot(escapeCount,escapeDeriv,'or')
         plt.show()      
     check=1 
-    print minElectricField,escapeHeight,escapePosition,distance
     if debug.trap_depth: 
-        check=float(raw_input('How many indices away must the escape point be?\n'))   
+        print minElectricField,escapeHeight,escapePosition,distance
+        #check=float(raw_input('How many indices away must the escape point be?\n'))   
     if distance<check:
         print('trap_depth.py:\nEscape point too close to trap minimum.\nImprove grid resolution or extend grid.\n')
     if escapeHeight>0.2:
