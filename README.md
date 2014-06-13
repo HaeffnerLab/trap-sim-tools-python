@@ -1,10 +1,10 @@
 trap-sim-tools-python
 =====================
 UPDATE: There is now a tutorial available if you would like a more in-depth explanation of how the software works: 
-https://drive.google.com/file/d/0B4X2o4phz6b2cnhBTGZJNmFTNGs/edit?usp=sharing
+https://docs.google.com/document/d/1JTatvu3O4k-PqwhIy2--DPaG2MX-FAwemsUnBLUViVU/edit
 
 To follow along, here is a link to an example: 
-https://drive.google.com/file/d/0B4X2o4phz6b2aDIzUXM1NHpHRjg/edit?usp=sharing
+https://docs.google.com/document/d/1wtRNDFywWQ9cXL9WKR77E5V8vgbGKvDNmUEMaKhVi5k/edit
 
 Likewise, here is a collection of all the pictures: 
 https://drive.google.com/folderview?id=0B4X2o4phz6b2eTZTVTRScTFtRWs&usp=sharing
