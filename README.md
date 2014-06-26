@@ -1,5 +1,9 @@
 trap-sim-tools-python
 =====================
+UPDATE 9/25/14: The project_parameters and all_functions have been significantly updated. The scripts post_process_trap,
+pfit, trap_knobs, and spher_harm (multiple) have been changed for speed and fidelity. The specific details will be 
+updated in teh readme, tutorial, and pictures soon.
+
 UPDATE: There is now a tutorial available if you would like a more in-depth explanation of how the software works: 
 https://docs.google.com/document/d/1JTatvu3O4k-PqwhIy2--DPaG2MX-FAwemsUnBLUViVU/edit
 
