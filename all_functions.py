@@ -1055,8 +1055,8 @@ def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
     yr = (y[Irf-3:Irf+4,Jrf-3:Jrf+4,Krf]-y[Irf,Jrf,Krf])/dL
     [C1,C2,theta] = p2d(Uxy,xr,yr) 
     C1,C2,theta = C1[0],C2[0],theta[0]                     
-    fx = (1e3/dL)*np.sqrt(2*C1*MU/(mass))/(2*np.pi)
-    fy = (1e3/dL)*np.sqrt(2*C2*MU/(mass))/(2*np.pi)
+    fx = (1e3/dL)*np.sqrt(abs(2*C1*MU/(mass)))/(2*np.pi)
+    fy = (1e3/dL)*np.sqrt(abs(2*C2*MU/(mass)))/(2*np.pi)
     #5) trap frequency in axial direction
     Uz=U[Irf,Jrf,:] # old projection
     l1 = np.max([Krf-6,1])
