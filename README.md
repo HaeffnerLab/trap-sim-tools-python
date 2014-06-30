@@ -217,4 +217,4 @@ ________________________________________________________________________________
 -----------------------------------------------------------------------------------------------------------------------
 To Do:
 
-* Change the length scales to micron, but keep mm for the E and U
+* Update with new trap_knobs, spher_harm, post_process, and electrode_mapping
