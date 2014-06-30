@@ -217,4 +217,4 @@ ________________________________________________________________________________
 -----------------------------------------------------------------------------------------------------------------------
 To Do:
 
-* Update with new trap_knobs, spher_harm, post_process, and electrode_mapping
+* Update documentation with new trap_knobs, spher_harm, post_process, trap_depth, and electrode_mapping
