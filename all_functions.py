@@ -2,8 +2,8 @@
 
 # Primary Functions 
 def test_fourth():
-    """Construct a pair of text files representing BEM-solver trap simulations.
-    This makes the primary synthetic data structure for testing."""
+    """Construct a text files representing BEM-solver trap simulations.
+    This creates 8 electrodes, covering RF, constant, E fields, z**2, and z**4 multipoles."""
     import numpy as np
     from project_parameters import simulationDirectory,debug
     low,high = -5,6 # defines data with i,j,k=(-2,-1,0,1,2), symmetric for saddle point at origin
@@ -15,28 +15,18 @@ def test_fourth():
     data = np.zeros((4,total)) # 4 would be 7 instead if we had electric field data
     elem = 0 # initialize the count of data points
     fp = np.sqrt(1/(4*np.pi))
-    #fp = 1
     for i in range(low,high): 
         for j in range(low,high):
             for k in range(low,high):
                 r = np.sqrt(i**2+j**2+k**2)
-                #r = np.sqrt(i**2+j**2)
                 data[:,elem]      = [i,j,k,fp*np.sqrt(15)*0.5*(i**2-j**2)] # DC_0 aka RF
-                data[:,elem+e]    = [i,j,k,fp] # DC_1
+                data[:,elem+e]    = [i,j,k,fp] # DC_1, appears to be the same for fp=1
                 data[:,elem+2*e]  = [i,j,k,fp*np.sqrt(3)*i] # DC_2
                 data[:,elem+3*e]  = [i,j,k,fp*np.sqrt(3)*j] # DC_3
                 data[:,elem+4*e]  = [i,j,k,fp*np.sqrt(3)*k] # DC_4
                 data[:,elem+5*e]  = [i,j,k,fp*np.sqrt(5)*(k**2-0.5*(i**2+j**2))] # DC_5
                 data[:,elem+6*e]  = [i,j,k,fp*np.sqrt(7)*(0.5*k*(2*k**2-3*i**2-3*j**2))] # DC_6
                 data[:,elem+7*e]  = [i,j,k,fp*np.sqrt(9)*(35*k**4-30*(k*r)**2+3*r**4)/8] # DC_7
-#                 data[:,elem]      = [i,j,k,np.sqrt(15)*fp*0.5*(i**2-j**2)] # DC_0 aka RF
-#                 data[:,elem+e]    = [i,j,k,fp] # DC_1
-#                 data[:,elem+2*e]  = [i,j,k,np.sqrt(3)*fp*i] # DC_2
-#                 data[:,elem+3*e]  = [i,j,k,np.sqrt(3)*fp*j] # DC_3
-#                 data[:,elem+4*e]  = [i,j,k,np.sqrt(3)*fp*k] # DC_4
-#                 data[:,elem+5*e]  = [i,j,k,np.sqrt(5)*fp*(k**2-0.5*(i**2+j**2))] # DC_5
-#                 data[:,elem+6*e]  = [i,j,k,np.sqrt(7)*fp*(k**3-(3/2)*k*(i**2+j**2))] # DC_6
-#                 data[:,elem+7*e]  = [i,j,k,np.sqrt(9)*fp*((35/8)*k**4-(15/4)*k**2+3)] # DC_7
                 elem += 1
         np.savetxt('{0}fourth1.txt'.format(simulationDirectory),data.T,delimiter=',')
     return 'test fourth constructed'
@@ -68,12 +58,6 @@ def test_text():
                     Ex,Ey,Ez = i,j,k
                     #Ex,Ey,Ez = i,-k,j
                     U1,U2,U3,U4,U5 = 0.5*(i**2-j**2),0.5*(2*k**2-i**2-j**2),i*j,k*j,i*k
-                    # Change to python/math mapping from ion trap mapping
-                    #U1,U2,U3,U4,U5 = U3,-U5,U2,-U4,-U1                    
-                    #U1,U2,U3,U4,U5 = U5,U3,U1,U4,U2
-                    #U1,U2,U3,U4,U5 = U5,U3,U1,U4,U2
-                    #U1,U2,U3,U4,U5 = U1/5.6,U2/5.6,U3/27.45,U4/5.6,U5/11.2
-                    #Ex,Ey,Ez = Ex/4.25,Ey/6.02,Ez/4.25
                     RF = U1+10**-3*(j**3-3*i**2*j)
                     # assign data points to each electrode
                     if debug.calibrate:
@@ -102,20 +86,6 @@ def test_text():
                         data[:,elem+11*e] = [i,j,k,U3+U4] # DC_11
                         data[:,elem+12*e] = [i,j,k,U3+U5] # DC_12
                         data[:,elem+13*e] = [i,j,k,U4+U5] # DC_13
-#                     data[:,elem]      = [i,j,k,Ex]    # DC_1
-#                     data[:,elem+e]    = [i,j,k,Ey]    # DC_2
-#                     data[:,elem+2*e]  = [i,j,k,Ez]    # DC_3
-#                     data[:,elem+3*e]  = [i,j,k,U1] # DC_4
-#                     data[:,elem+4*e]  = [i,j,k,U2] # DC_5
-#                     data[:,elem+5*e]  = [i,j,k,U3] # DC_6
-#                     data[:,elem+6*e]  = [i,j,k,U4] # DC_7
-#                     data[:,elem+7*e]  = [i,j,k,U5] # DC_8
-#                     data[:,elem+8*e]  = [i,j,k,0] # DC_9
-#                     data[:,elem+9*e]  = [i,j,k,0] # DC_10
-#                     data[:,elem+10*e] = [i,j,k,0] # DC_11
-#                     data[:,elem+11*e] = [i,j,k,0] # DC_12
-#                     data[:,elem+12*e] = [i,j,k,0] # DC_13
-#                     data[:,elem+13*e] = [i,j,k,U5]      # DC_14 aka RF
                     elem += 1
         if debug.calibrate:
            np.savetxt('{0}meshless-pt{1}.txt'.format(simulationDirectory,sim),data.T,delimiter=',') 
@@ -503,25 +473,21 @@ def trap_knobs():
     After solving the system, expand the multipoleControl matric to include these.
     If the system is underdetermined, then there is no Kernel or regularization."""
     print('Executing trap_knobs...')
-    #0) Define parameters
-    from project_parameters import save,debug,trapFile,electrodeMapping,electrodes,multipoles,name,simulationDirectory,reg
+    #0) Define parameters and heck to see what scripts have been run
+    from project_parameters import save,debug,trapFile,elMap,electrodes,multipoles,name,simulationDirectory,reg
     from all_functions import nullspace,plotN
     import numpy as np
     import pickle
     file = open(trapFile,'rb')
     trap = pickle.load(file)
     file.close()
-    #1) check to see what scripts have been run and build parameters from them
     if trap.configuration.expand_field!=True:
         return 'You must run expand_field first!'
     if trap.configuration.trap_knobs and not debug.trap_knobs:
         return 'Already executed trap_knobs.'
-    #2) redefine parameters with shorthand and run sanity checks
-    totE  = len(electrodes) # numTotalElectrodes
-    useE = numUsedMultipoles=int(np.sum(electrodes)) # numUsedElectrodes
-    totM  = len(multipoles) # numTotalMultipoles
-    useM = numUsedMultipoles=int(np.sum(multipoles)) # numUsedMultipoles
-    eo = np.sqrt(useM)-1 # expansionOrder
+    #1) redefine parameters with shorthand and run sanity checks
+    totE = len(electrodes) # numTotalElectrodes
+    totM = len(multipoles) # numTotalMultipoles
     assert totE == trap.configuration.numElectrodes # Make sure that the total number of electrodes includes the RF.
     tc = trap.configuration
     mc = tc.multipoleCoefficients # this is the original, maximum-length multipole coefficients matrix (multipoles,electrodes)
@@ -529,6 +495,15 @@ def trap_knobs():
         row+=1
         if abs(np.sum(mc[row,:])) < 10**-50: # arbitrarily small
             return 'trap_knobs: row {} is all 0, can not solve least square, stopping trap knobs'.format(row)
+    #2) Apply electrode mapping by clearing some electrodes and adding them to the new map
+    # mapping one to an unused electrode should turn it off as well
+    for index in range(totE):
+        if index != elMap[index]:
+            mc[:,elMap[index]] += mc[:,index] # combine the electrode to its mapping
+            electrodes[index] = 0 # clear the mapped electrode, implemented in part 3
+    useE = int(np.sum(electrodes)) # numUsedElectrodes
+    useM = int(np.sum(multipoles)) # numUsedMultipoles
+    eo = np.sqrt(useM)-1 # expansionOrder
     #3) build a reduced array of multipole coefficients to invert
     MC = np.zeros((useM,useE)) # reduced matrix to build up and invert
     ML = 0
@@ -578,7 +553,7 @@ def trap_knobs():
         for ml in range(totM):
             if multipoles[ml]:
                 plot = c[:,ml]
-                plotN(plot,'Multipole {}'.format(ml)) 
+                #plotN(plot,'Multipole {}'.format(ml)) 
     #8) update instance configuration with multipole controls to be used bu dc_voltages in post_process_trap
     tc.multipoleKernel = K
     tc.multipoleControl = c
@@ -733,7 +708,7 @@ def post_process_trap():
     Nikos, January 2009
     William Python Feb 2014""" 
     #################### 0) assign internal values #################### 
-    from project_parameters import debug,savePath,name,driveAmplitude,driveFrequency,Omega,dcplot,weightElectrodes,coefs,ax,az,phi,save
+    from project_parameters import debug,savePath,name,driveAmplitude,driveFrequency,Omega,dcplot,weightElectrodes,coefs,ax,az,phi,save,scale
     from all_functions import find_saddle,plot_potential,dc_potential,set_voltages,d_e,exact_saddle,spher_harm_bas,spher_harm_exp,pfit,plotN
     import numpy as np
     import pickle    
@@ -745,15 +720,14 @@ def post_process_trap():
     mass = tf.configuration.mass
     Zval = tf.configuration.position
     r0 = tf.configuration.r0
-    RFampl = driveAmplitude
-    Freq = driveFrequency  
+    RFampl = driveAmplitude 
     V0 = mass*(2*np.pi*Omega)**2*(r0*10**-3)**2/qe
     X,Y,Z=tf.instance.X,tf.instance.Y,tf.instance.Z    
     data = tf.configuration
     dcVoltages = set_voltages()
-    if debug.post_process_trap:
-        print dcVoltages,np.sum(abs(dcVoltages))
-        plotN(dcVoltages,'set DC voltages')
+#     if debug.post_process_trap:
+    print dcVoltages,np.sum(abs(dcVoltages))
+#         plotN(dcVoltages,'set DC voltages')
     ne = len(weightElectrodes)
     E = tf.instance.E
     out = tf.configuration
@@ -762,8 +736,8 @@ def post_process_trap():
     [Irf,Jrf,Krf] = find_saddle(data.EL_RF,X,Y,Z,2,Zval)
     print('RF Saddle at {0},{1},{2}'.format(Irf,Jrf,Krf))
     Vrf = RFampl*data.EL_RF
-    if debug.post_process_trap:
-        plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
+#     if debug.post_process_trap:
+#         plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
     #2) DC Analysis
     print('DC Analysis')
     Vdc = dc_potential(trap,dcVoltages,E,update=None)
@@ -771,18 +745,21 @@ def post_process_trap():
         plot_potential(Vdc,X,Y,Z,'1D plots','full DC potential')
     #3) determine stray field (beginning of justAnalyzeTrap)
     print('Determining compensation...')
-    dist = d_e(E,Vdc,data,X,Y,Z,Zval)
-    print('Stray field is ({0},{1},{2}) V/m.'.format(1e3*E[0],1e3*E[1],1e3*E[2]))
-    print('With this field, the compensation is optimized to {} micron.'.format(1e3*dist))
+    #dist = d_e(E,Vdc,data,X,Y,Z,Zval)
+    dist = 999 # temporary
+    
+    print('Stray field is ({0},{1},{2}) V/m.'.format(scale*E[0],scale*E[1],scale*E[2]))
+    print('With this field, the compensation is optimized to {} micron.'.format(scale*dist))
     #4) determine the exact saddles of the RF and DC
     Vdc = dc_potential(trap,dcVoltages,E)
     print('Determining exact saddle points...')
-    [XRF,YRF,ZRF] = exact_saddle(data.EL_RF,X,Y,Z,2,Zval)  
-    [XDC,YDC,ZDC] = exact_saddle(Vdc,X,Y,Z,3,Zval)
+    [XRF,YRF,ZRF] = [0,0,0]#exact_saddle(data.EL_RF,X,Y,Z,2,Zval)  
+    [XDC,YDC,ZDC] = [0,0,0]#exact_saddle(Vdc,X,Y,Z,3,Zval)
     [IDC,JDC,KDC] = find_saddle(Vdc,X,Y,Z,3,Zval) # only used to calculate error at end
     print('RF saddle: ({0},{1},{2})\nDC saddle ({3},{4},{5}).'.format(XRF,YRF,ZRF,XDC,YDC,ZDC))   
     #5) call pfit to determine the trap characteristics
-    [fx,fy,fz,theta,Depth,xe,ye,ze] = pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf)#pfit(trap,E,Freq,RFampl)
+    [fx,fy,fz,theta,Depth,Xe,Ye,Ze] = pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf)#pfit(trap,E,Freq,RFampl)
+    print('The trap escape position is at ({0},{1},{2}) microns, for a trap depth of {3} mV'.format(Xe*scale,Ye*scale,Ze*scale,Depth*scale))
     print('The trap frequencies are fx = {0} MHz, fy = {1} MHz, and fz = {2} MHz'.format(fx*10**-6,fy*10**-6,fz*10**-6))
     #6) Sanity testing; quality check no longer used
     if debug.post_process_trap:
@@ -806,7 +783,7 @@ def post_process_trap():
         out.frequency = [fx,fy,fz]
         out.theta = theta
         out.trap_depth = Depth/qe 
-        out.escapepos = [xe,ye,ze]
+        out.escapepos = [Xe,Ye,Ze]
         out.Quadrf = 2*np.array([Qrf[7]*3,Qrf[4]/2,Qrf[8]*6,-Qrf[6]*3,-Qrf[5]*3])
         out.Quaddc = 2*np.array([Qdc[7]*3,Qdc[4]/2,Qdc[8]*6,-Qdc[6]*3,-Qdc[5]*3])
         out.Arf = Arf
@@ -999,6 +976,7 @@ def set_voltages():
         el = np.dot(mCf.T,inp) # these are the electrode voltages
         el = np.real(el)
     #3) regularize if set to do so
+    reg = 0
     if reg: 
         C = el
         Lambda = np.linalg.lstsq(tc.multipoleKernel,C)
@@ -1038,25 +1016,28 @@ def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
     William Python February 2014."""
     #1) find dc potential
     import numpy as np
-    from all_functions import plot_potential,p2d,trap_depth
-    from project_parameters import charge,mass,driveAmplitude,Omega,debug
+    from all_functions import plot_potential,p2d,trap_depth,find_saddle,exact_saddle
+    from project_parameters import charge,mass,driveAmplitude,Omega,debug,scale
     #2) find pseudopotential
     """Gebhard, Oct 2010:
     changed back to calculating field numerically in ppt2 instead directly
     with bemsolver. this is because the slow bemsolver (new version) does not output EX, EY, EZ."""
-    [Ey,Ex,Ez] = np.gradient(Vrf,abs(X[1]-X[0])/1000.,abs(Y[1]-Y[0])/1000.,abs(Z[1]-Z[0])/1000.) # fortran indexing
+    [Ey,Ex,Ez] = np.gradient(Vrf,abs(X[1]-X[0])/scale,abs(Y[1]-Y[0])/scale,abs(Z[1]-Z[0])/scale) # fortran indexing
     Esq = Ex**2 + Ey**2 + Ez**2
     #3) plotting pseudopotential, etc; outdated?
     PseudoPhi = Esq*(charge**2)/(4*mass*Omega**2) 
     U = PseudoPhi+charge*Vdc # total trap potential
     if debug.pfit:
-        plot_potential(Ex,X,Y,Z,'1D plots','Ex','U_{ps} (eV)',[Irf,Jrf,Krf])
-        plot_potential(Ey,X,Y,Z,'1D plots','Ey','U_{ps} (eV)',[Irf,Jrf,Krf])
-        plot_potential(Ez,X,Y,Z,'1D plots','Ez','U_{ps} (eV)',[Irf,Jrf,Krf])    
-        plot_potential(Esq,X,Y,Z,'1D plots','E**2','U_{ps} (eV)',[Irf,Jrf,Krf])
-        plot_potential(PseudoPhi/charge,X,Y,Z,'1D plots','Pseudopotential','U_{ps} (eV)',[Irf,Jrf,Krf])
-        plot_potential(Vdc,X,Y,Z,'1D plots','VL','U_{sec} (eV)',[Irf,Jrf,Krf])
-        plot_potential(U/charge,X,Y,Z,'1D plots','TrapPotential','U_{sec} (eV)',[Irf,Jrf,Krf])
+#         plot_potential(Vrf,X,Y,Z,'1D plots','Vrf','U_{rf} (eV)',[Irf,Jrf,Krf])
+#         plot_potential(Ex,X,Y,Z,'1D plots','Ex','U_{ps} (eV)',[Irf,Jrf,Krf])
+#         plot_potential(Ey,X,Y,Z,'1D plots','Ey','U_{ps} (eV)',[Irf,Jrf,Krf])
+#         plot_potential(Ez,X,Y,Z,'1D plots','Ez','U_{ps} (eV)',[Irf,Jrf,Krf])    
+#         plot_potential(Esq,X,Y,Z,'1D plots','E**2','U_{ps} (eV)',[Irf,Jrf,Krf])
+        print 'temporary'
+#     plot_potential(Vrf,X,Y,Z,'1D plots','Vrf','U_{rf} (eV)',[Irf,Jrf,Krf])
+#     plot_potential(PseudoPhi/charge,X,Y,Z,'1D plots','Pseudopotential','U_{ps} (eV)',[Irf,Jrf,Krf])
+#     plot_potential(Vdc,X,Y,Z,'1D plots','DC Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
+#     plot_potential(U/charge,X,Y,Z,'1D plots','Trap Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
     #4) determine trap frequencies and tilt in radial directions
     Uxy = U[Irf-3:Irf+4,Jrf-3:Jrf+4,Krf]
     MU = np.max(Uxy) # normalization factor, will be undone when calculating frequencies
@@ -1082,19 +1063,19 @@ def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
     l2 = np.min([Krf+6,np.max(Z.shape)])
     p = np.polyfit((Z[l1:l2+1]-Z[Krf])/dL,Uz[l1:l2+1],6)
     fz = (1e3/dL)*np.sqrt(2*p[4]/mass)/(2*np.pi)
-    if debug.pfit:
-        import matplotlib.pyplot as plt
-        ft = np.polyval(p,(Z-Z[Krf])/dL)
-        Zt=((Z[l1:l2]-Z[Krf])/dL).T
-        Uzt=Uz[l1:l2].T
-        fig=plt.figure()
-        plt.plot(Z,MU*Uz)
-        plt.plot(Z[l1:l2],MU*ft[l1:l2],'r')
-        plt.title('Potential in axial direction')
-        plt.xlabel('axial direction (mm)')
-        plt.ylabel('trap potential (J)')
-        plt.show()
-    [Depth,Xe,Ye,Ze] = trap_depth(U/charge,X,Y,Z,Irf,Jrf,Krf,debug=True)  
+#     if debug.pfit:
+#         import matplotlib.pyplot as plt
+#         ft = np.polyval(p,(Z-Z[Krf])/dL)
+#         Zt=((Z[l1:l2]-Z[Krf])/dL).T
+#         Uzt=Uz[l1:l2].T
+#         fig=plt.figure()
+#         plt.plot(Z,MU*Uz)
+#         plt.plot(Z[l1:l2],MU*ft[l1:l2],'r')
+#         plt.title('Potential in axial direction')
+#         plt.xlabel('axial direction (mm)')
+#         plt.ylabel('trap potential (J)')
+#         plt.show()
+    [Depth,Xe,Ye,Ze] = trap_depth(U/charge,X,Y,Z,Irf,Jrf,Krf)  
     return [fx,fy,fz,theta,Depth,Xe,Ye,Ze] 
 
 def exact_saddle(V,X,Y,Z,dim,Z0=None):
@@ -1178,6 +1159,7 @@ def find_saddle(V,X,Y,Z,dim,Z0=None):
     to those corresponding to Z0 and Ks is such that z[Ks]<Z0, z[Ks+1]>=Z0."""
     debug=False # internal code only; typically False
     import numpy as np
+    from project_parameters import scale
     import matplotlib.pyplot as plt
     if (dim==2 and Z0==None):
         return 'z0 needed for evaluation'
@@ -1185,7 +1167,7 @@ def find_saddle(V,X,Y,Z,dim,Z0=None):
         if len(V.shape)!=3:
             return('Problem with find_saddle.m dimensionalities.')
         f=V/float(np.amax(V)) # Normalize field
-        [Ex,Ey,Ez]=np.gradient(f,abs(X[1]-X[0]),abs(Y[1]-Y[0]),abs(Z[1]-Z[0])) # grid spacing is automatically consistent thanks to BEM-solver
+        [Ex,Ey,Ez]=np.gradient(f,abs(X[1]-X[0])/scale,abs(Y[1]-Y[0])/scale,abs(Z[1]-Z[0])/scale) # grid spacing is automatically consistent thanks to BEM-solver
         E=np.sqrt(Ex**2+Ey**2+Ez**2) # magnitude of gradient (E field)
         m=E[1,1,1]
         origin=[1,1,1]
@@ -1371,7 +1353,7 @@ def plot_potential(V,X,Y,Z,key='1D plots',tit=None,ylab=None,origin=None):
         axis=Y
         projection=V[origin[0],:,origin[2]]
         plt.subplot(2,2,2)
-        plt.plot(axis,projection)
+        plt.plot(axis[8:21],projection[8:21])
         plt.xlabel('y (mm)')
         plt.ylabel(ylab)
         ######### Plot K ##########
@@ -1614,8 +1596,8 @@ def sum_of_e_field(r,V,X,Y,Z,exact_saddle=True):
     from project_parameters import debug
     x0,y0,z0=r[0],r[1],r[2]
     from all_functions import spher_harm_exp
-    basis,scale = spher_harm_bas(x0,y0,z0,X,Y,Z,3)
-    c=spher_harm_exp(V,basis,scale) #Update these variables by abstraction.
+    basis,rnorm = spher_harm_bas(x0,y0,z0,X,Y,Z,3)
+    c=spher_harm_exp(V,basis,rnorm) #Update these variables by abstraction.
     if debug.soef:
         print('Checking saddle: ({0},{1},{2})'.format(x0,y0,z0))
     s=c**2
@@ -1638,8 +1620,8 @@ def sum_of_e_field_2d(r,z0,V,X,Y,Z,exact_saddle=True):
     from project_parameters import debug
     x0,y0=r[0],r[1]
     from all_functions import spher_harm_exp
-    basis,scale = spher_harm_bas(x0,y0,z0,X,Y,Z,4)
-    c=spher_harm_exp(V,basis,scale) #Update these variables by abstraction.
+    basis,rnorm = spher_harm_bas(x0,y0,z0,X,Y,Z,4)
+    c=spher_harm_exp(V,basis,rnorm) #Update these variables by abstraction.
     if debug.soef:
         print('Checking saddle: ({0},{1},{2})'.format(x0,y0,z0))
     s=c**2
@@ -1765,7 +1747,7 @@ def trap_depth_old(V,X,Y,Z,Im,Jm,Km,debug=False):
     [Xe,Ye,Ze]=[X[Ie],Y[Je],Z[Ke]]            
     return [D,Xe,Ye,Ze]
 
-def trap_depth(V,X,Y,Z,Im,Jm,Km,debug=False): 
+def trap_depth(V,X,Y,Z,Im,Jm,Km): 
     """Find the trap depth for trap potential V.
     Returns D,x,y,z.
     The trapping position is the absolute minimum in the potential function.
@@ -1776,7 +1758,7 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km,debug=False):
     V is a cubic matrix of potential values
     X,Y,Z are vectors defining the grid in X,Y,Z directions.
     Im,Jm,Km are the indices of the trap potential minimum (ion position)."""  
-    from project_parameters import debug
+    from project_parameters import debug,scale,position
     from all_functions import sum_of_e_field,spher_harm_bas,spher_harm_exp,spher_harm_cmp,find_saddle
     def a(a,N):
         """Shortcut function to convert array x into a row vector.""" 
@@ -1784,29 +1766,26 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km,debug=False):
         a=np.ravel(a, order='F') # Same order
         return a
     import numpy as np
-    
     N1,N2,N3=V.shape
     N=N1*N2*N3
-    basis,scale = spher_harm_bas(X[Im],Y[Jm],Z[Km],X,Y,Z,4) # arbitrary order for smoothing
-    M = spher_harm_exp(V,basis,scale) 
-    f = spher_harm_cmp(M,basis,scale,4)
-    [Ex,Ey,Ez]=np.gradient(f,abs(X[1]-X[0]),abs(Y[1]-Y[0]),abs(Z[1]-Z[0]))
+    [Ex,Ey,Ez]=np.gradient(V,abs(X[1]-X[0])/scale,abs(Y[1]-Y[0])/scale,abs(Z[1]-Z[0])/scale)
     E=np.sqrt(Ex**2+Ey**2+Ez**2)
     # identify the escape position and height by checking each point
     minElectricField=np.max(E) # initialize as maximum E field magnitude
     distance=0
     escapeHeight=1
     escapePosition=[0,0,0]
+    [Im,Jm,Km] = find_saddle(V,X,Y,Z,3)
+    Vm = V[Im,Jm,Km]
     for i in range(N1):
         for j in range(N2):
             for k in range(N3):
-                if [i,j,k]==[Im,Jm,Km]:
-                    Vm=V[i,j,k]
-                elif E[i,j,k]<minElectricField:
-                    minElectricField=E[i,j,k]
-                    escapeHeight=V[i,j,k]
-                    escapePosition=[i,j,k]
-                    distance=abs(np.sqrt((Im-i)**2+(Jm-j)**2+(Km-k)**2))  
+                if E[i,j,k]<minElectricField:
+                    distance=abs(np.sqrt((Im-i)**2+(Jm-j)**2+(Km-k)**2)) 
+                    if distance > 3:
+                        minElectricField=E[i,j,k]
+                        escapeHeight=V[i,j,k]
+                        escapePosition=[i,j,k]
     check=1 
     if debug.trap_depth: 
         print minElectricField,escapeHeight,escapePosition,distance   
@@ -1816,8 +1795,5 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km,debug=False):
         print('trap_depth.py: Escape point parameter too high. Improve grid resolution or extend grid.')
     D=escapeHeight-Vm
     [Ie,Je,Ke]=escapePosition
-    [Xe,Ye,Ze]=[X[Ie],Y[Je],Z[Ke]]      
-    
-    #exact_saddle(Vn,X,Y,Z,3) # option for finding true escape position
-          
+    [Xe,Ye,Ze]=[X[Ie],Y[Je],Z[Ke]]           
     return [D,Xe,Ye,Ze]
