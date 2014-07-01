@@ -17,7 +17,7 @@ debug = TreeDict()
 debug.import_data = 0
 debug.get_trap = 0
 debug.expand_field = 0
-debug.trap_knobs = 0
+debug.trap_knobs = 1
 debug.post_process_trap = 0
 debug.pfit = 0
 debug.soef = 0
@@ -57,7 +57,7 @@ zMin = 5/scale      # lowest value along the rectangular axis
 zMax = 105/scale    # highest value along the rectangular axis
 zStep = 100/scale   # range of each simulation
 r0 = 1              # scaling value, nearly always one
-name = 'numerical8' # name of final, composite, single-simulation data structure; may also be string of choice              
+name = 'numerical9' # name of final, composite, single-simulation data structure; may also be string of choice              
 trap = savePath+name+'.pkl'
 
 #################################################################################
@@ -86,8 +86,10 @@ electrodeMapping determines the pairing.
 manualElectrodes determines the electrodes which are under manual voltage control. 
 It has numElectrodes elements (i.e. they are not connected to an arbitrary voltage, not to multipole knobs).
 All entries != 0 are under manual control, and entries = 0 are not under manual control.""" 
-electrodeMapping = np.array([[0,0],[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],[8,8],[9,9],[10,10],
-                    [11,11],[12,12],[13,13],[14,14],[15,15],[16,16],[17,17],[18,18],[19,19],[20,20],[21,21]]) # worry about this later
+# electrodeMapping = np.array([[0,0],[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],[8,8],[9,9],[10,10],
+#                     [11,11],[12,12],[13,13],[14,14],[15,15],[16,16],[17,17],[18,18],[19,19],[20,20],[21,21]]) # worry about this later
+elMap = np.arange(numElectrodes) # default electrode mapping
+#elMap[0] = 1 # this clears electrode 0 and adds it to 1
 electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center; unselected are manual
 multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
 electrodes[:] = 1
@@ -95,6 +97,8 @@ electrodes[0] = 0
 multipoles[1:4] = 1
 multipoles[6] = 1
 multipoles[20] = 1
+#multipoles[1:9] = 1
+        
 
 #################################################################################
 ##############################  post_process  ##################################
@@ -128,8 +132,9 @@ coefs = np.zeros((expansionOrder+1)**2) # this is the array of desired weights t
 # Note that these are the opposite sign of the actual electric field, which is the negative gradient of the potential.
 # The (x**2-y**2)/2 RF-like term has index 7 and the z**2 term has index 5.
 # The z**3 term is index 11 and the z**4 term is index 19.
-coefs[6] = 10*np.sqrt(4*np.pi/5)
-coefs[20] = 0
+coefs[6] = 15/np.sqrt(4*np.pi/5)
+coefs[20] = -360/np.sqrt(8*np.pi/3)
+
 
 if fourth:
     baseDataName = 'fourth'#'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
