@@ -725,9 +725,9 @@ def post_process_trap():
     X,Y,Z=tf.instance.X,tf.instance.Y,tf.instance.Z    
     data = tf.configuration
     dcVoltages = set_voltages()
-#     if debug.post_process_trap:
-    print dcVoltages,np.sum(abs(dcVoltages))
-#         plotN(dcVoltages,'set DC voltages')
+    if debug.post_process_trap:
+        print dcVoltages,np.sum(abs(dcVoltages))
+        plotN(dcVoltages,'set DC voltages')
     ne = len(weightElectrodes)
     E = tf.instance.E
     out = tf.configuration
@@ -736,8 +736,8 @@ def post_process_trap():
     [Irf,Jrf,Krf] = find_saddle(data.EL_RF,X,Y,Z,2,Zval)
     print('RF Saddle at {0},{1},{2}'.format(Irf,Jrf,Krf))
     Vrf = RFampl*data.EL_RF
-#     if debug.post_process_trap:
-#         plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
+    if debug.post_process_trap:
+        plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
     #2) DC Analysis
     print('DC Analysis')
     Vdc = dc_potential(trap,dcVoltages,E,update=None)
@@ -745,16 +745,14 @@ def post_process_trap():
         plot_potential(Vdc,X,Y,Z,'1D plots','full DC potential')
     #3) determine stray field (beginning of justAnalyzeTrap)
     print('Determining compensation...')
-    #dist = d_e(E,Vdc,data,X,Y,Z,Zval)
-    dist = 999 # temporary
-    
+    dist = d_e(E,Vdc,data,X,Y,Z,Zval)
     print('Stray field is ({0},{1},{2}) V/m.'.format(scale*E[0],scale*E[1],scale*E[2]))
     print('With this field, the compensation is optimized to {} micron.'.format(scale*dist))
     #4) determine the exact saddles of the RF and DC
     Vdc = dc_potential(trap,dcVoltages,E)
     print('Determining exact saddle points...')
-    [XRF,YRF,ZRF] = [0,0,0]#exact_saddle(data.EL_RF,X,Y,Z,2,Zval)  
-    [XDC,YDC,ZDC] = [0,0,0]#exact_saddle(Vdc,X,Y,Z,3,Zval)
+    [XRF,YRF,ZRF] = exact_saddle(data.EL_RF,X,Y,Z,2,Zval)  
+    [XDC,YDC,ZDC] = exact_saddle(Vdc,X,Y,Z,3,Zval)
     [IDC,JDC,KDC] = find_saddle(Vdc,X,Y,Z,3,Zval) # only used to calculate error at end
     print('RF saddle: ({0},{1},{2})\nDC saddle ({3},{4},{5}).'.format(XRF,YRF,ZRF,XDC,YDC,ZDC))   
     #5) call pfit to determine the trap characteristics
@@ -1033,11 +1031,10 @@ def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
 #         plot_potential(Ey,X,Y,Z,'1D plots','Ey','U_{ps} (eV)',[Irf,Jrf,Krf])
 #         plot_potential(Ez,X,Y,Z,'1D plots','Ez','U_{ps} (eV)',[Irf,Jrf,Krf])    
 #         plot_potential(Esq,X,Y,Z,'1D plots','E**2','U_{ps} (eV)',[Irf,Jrf,Krf])
-        print 'temporary'
-#     plot_potential(Vrf,X,Y,Z,'1D plots','Vrf','U_{rf} (eV)',[Irf,Jrf,Krf])
-#     plot_potential(PseudoPhi/charge,X,Y,Z,'1D plots','Pseudopotential','U_{ps} (eV)',[Irf,Jrf,Krf])
-#     plot_potential(Vdc,X,Y,Z,'1D plots','DC Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
-#     plot_potential(U/charge,X,Y,Z,'1D plots','Trap Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
+        plot_potential(Vrf,X,Y,Z,'1D plots','Vrf','U_{rf} (eV)',[Irf,Jrf,Krf])
+        plot_potential(PseudoPhi/charge,X,Y,Z,'1D plots','Pseudopotential','U_{ps} (eV)',[Irf,Jrf,Krf])
+        plot_potential(Vdc,X,Y,Z,'1D plots','DC Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
+        plot_potential(U/charge,X,Y,Z,'1D plots','Trap Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
     #4) determine trap frequencies and tilt in radial directions
     Uxy = U[Irf-3:Irf+4,Jrf-3:Jrf+4,Krf]
     MU = np.max(Uxy) # normalization factor, will be undone when calculating frequencies
@@ -1353,7 +1350,7 @@ def plot_potential(V,X,Y,Z,key='1D plots',tit=None,ylab=None,origin=None):
         axis=Y
         projection=V[origin[0],:,origin[2]]
         plt.subplot(2,2,2)
-        plt.plot(axis[8:21],projection[8:21])
+        plt.plot(axis,projection)
         plt.xlabel('y (mm)')
         plt.ylabel(ylab)
         ######### Plot K ##########
@@ -1782,10 +1779,11 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km):
             for k in range(N3):
                 if E[i,j,k]<minElectricField:
                     distance=abs(np.sqrt((Im-i)**2+(Jm-j)**2+(Km-k)**2)) 
-                    if distance > 3:
+                    if distance > 5:
                         minElectricField=E[i,j,k]
                         escapeHeight=V[i,j,k]
                         escapePosition=[i,j,k]
+                        print E[i,j,k],V[i,j,k],[i,j,k],distance
     check=1 
     if debug.trap_depth: 
         print minElectricField,escapeHeight,escapePosition,distance   
