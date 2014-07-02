@@ -12,13 +12,13 @@ mp=1.67262158e-27 # proton mass
 
 # Universal Parameters
 fourth = 0 # for testing synthetic data
-save  = 1               
+save  = 1            
 debug = TreeDict()
 debug.import_data = 0
 debug.get_trap = 0
 debug.expand_field = 0
 debug.trap_knobs = 1
-debug.post_process_trap = 0
+debug.post_process_trap = 1
 debug.pfit = 0
 debug.soef = 0
 debug.trap_depth = 0
@@ -29,7 +29,7 @@ debug.trap_depth = 0
 """Includes project parameters relevant to import_data to build entire project in one script."""
 simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
 baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
-projectName = 'abridged' # arbitrarily named by user
+projectName = 'base_grid' # arbitrarily named by user
 useDate = 0 # determine if simulation files are saved with our without date in name  
 timeNow = datetime.datetime.now().date() # the present date and time 
 fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
@@ -86,19 +86,22 @@ electrodeMapping determines the pairing.
 manualElectrodes determines the electrodes which are under manual voltage control. 
 It has numElectrodes elements (i.e. they are not connected to an arbitrary voltage, not to multipole knobs).
 All entries != 0 are under manual control, and entries = 0 are not under manual control.""" 
-# electrodeMapping = np.array([[0,0],[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],[8,8],[9,9],[10,10],
-#                     [11,11],[12,12],[13,13],[14,14],[15,15],[16,16],[17,17],[18,18],[19,19],[20,20],[21,21]]) # worry about this later
 elMap = np.arange(numElectrodes) # default electrode mapping
-#elMap[0] = 1 # this clears electrode 0 and adds it to 1
+#elMap[2] = 3 # clears electrode 2 and adds it to 3
 electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center; unselected are manual
 multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
-electrodes[:] = 1
-electrodes[0] = 0
-multipoles[1:4] = 1
-multipoles[6] = 1
-multipoles[20] = 1
-#multipoles[1:9] = 1
-        
+electrodes[:] = 1 # turns on all electrodes
+electrodes[0] = 0 # not made redundant by rfbias in manual because we may want RF turned off without setting it to anything
+multipoles[0:9] = 1 # turns on all orders 0 to 2 multipoles
+# multipoles[6] = 1 # turns on the DC multipole
+# multipoles[16:25] = 1 # turns on all 4th order multipoles
+# multipoles[8] = 1 # turns on eth RF multipole
+# multipoles[:] = 1 # turns on all multipoles up to expansionOrder
+manuals = np.zeros(numElectrodes) # will typically use this in place of deactivating electrodes directly
+manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing beyond setting electrodes[0]
+for el in range(numElectrodes):
+    if manuals[el]:
+        electrodes[el] = 0      
 
 #################################################################################
 ##############################  post_process  ##################################
@@ -130,12 +133,15 @@ phi = 0     # Angle of rotation of DC multipole wrt RF multipole
 coefs = np.zeros((expansionOrder+1)**2) # this is the array of desired weights to multipole coefficients
 # Simply define it by indices. The first three (0,1,2) are the electric field terms (-y,z,-x). The 0th may be changed to the constant.
 # Note that these are the opposite sign of the actual electric field, which is the negative gradient of the potential.
-# The (x**2-y**2)/2 RF-like term has index 7 and the z**2 term has index 5.
-# The z**3 term is index 11 and the z**4 term is index 19.
-coefs[6] = 15/np.sqrt(4*np.pi/5)
-coefs[20] = -360/np.sqrt(8*np.pi/3)
+# The (x**2-y**2)/2 RF-like term has index 8 and the z**2 term has index 6.
+# The z**3 term is index 12 and the z**4 term is index 20.
+coefs[6] = 10 # default value to z**2 term, which varies from about 5 to 15
+# coefs[8] = -65 # default value to RF term, which varies from about 0 to -65
+# coefs[20] = -200 # default value to z**4 term, which varies from about 0 to -300
+# coefs[4:9] /= np.sqrt(4*np.pi/5) # conversion factor for 2nd order
+# coefs[16:25] /= np.sqrt(8*np.pi/3) # conversion factor for 4th order
 
-
+# Debugging parameters for sytnthetic data.
 if fourth:
     baseDataName = 'fourth'#'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
     projectName = 'fourth' # arbitrarily named by user\
@@ -151,8 +157,6 @@ if fourth:
     zStep = 11   # range of each simulation
     name = 'fourth1' # name of final, composite, single-simulation data structure; may also be string of choice    
     trapFile = savePath+name+'.pkl'   
-#     manualElectrodes = [1,1,0,0,0,0,1,0]#,0,0,0,0,0,0,0,0,0,0,0,0,0,0]   
-#     electrodeMapping = np.array([[0,0],[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7]])
     electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center; unselected are manual
     multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
     #electrodes[2:numElectrodes] = 1
@@ -161,7 +165,6 @@ if fourth:
     multipoles[1:4] = 1
     multipoles[6] = 1
     multipoles[20] = 1
-    coefs[6] = 1#10*np.sqrt(4*np.pi/5)
-    coefs[20] = 1
+    coefs[20] = 100
     
     
