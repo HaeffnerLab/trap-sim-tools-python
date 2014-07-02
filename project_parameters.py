@@ -75,18 +75,7 @@ pureMultipoles = 0
 trapFile = savePath+name+'.pkl'  
 expansionOrder = 4 # order of multipole expansion, nearly always 2
 assert expansionOrder <= regenOrder
-reg = 0 # by regularization I mean minimizing the norm of el with addition of vectors belonging to the kernel of tf.config.multipoleCoefficients
-""" Here we define the electrode combinations. 
-The convention is physical electrode -> functional electrode.
-If electrodes 1 and 2 are combined into one electrode, then enter [[1,1],[2,1],[3,2] ...]
-If electrodes 1 and 4 are not in use (grounded), then enter [[1,0],[2,1],[3,2],[4,0] ...]
-numElectrodes = nonGroundElectrodes (i.e. last) is the center electrode.
-There are no longer RF electrodes included.
-electrodeMapping determines the pairing. 
-manualElectrodes determines the electrodes which are under manual voltage control. 
-It has numElectrodes elements (i.e. they are not connected to an arbitrary voltage, not to multipole knobs).
-All entries != 0 are under manual control, and entries = 0 are not under manual control.""" 
-elMap = np.arange(numElectrodes) # default electrode mapping
+reg = 0 # by regularization we mean minimizing the norm of el with addition of vectors belonging to the kernel of tf.config.multipoleCoefficients
 #elMap[2] = 3 # clears electrode 2 and adds it to 3
 electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center; unselected are manual
 multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
