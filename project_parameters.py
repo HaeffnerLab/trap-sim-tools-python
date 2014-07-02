@@ -12,16 +12,16 @@ mp=1.67262158e-27 # proton mass
 
 # Universal Parameters
 fourth = 0 # for testing synthetic data
-save  = 1            
+save  = 1  # saves data to python pickle
 debug = TreeDict()
-debug.import_data = 0
-debug.get_trap = 0
-debug.expand_field = 0
-debug.trap_knobs = 1
-debug.post_process_trap = 1
-debug.pfit = 0
-debug.soef = 0
-debug.trap_depth = 0
+debug.import_data = 0  # displays potential of every electrode for every simulation
+debug.get_trap = 0     # displays the newly connected electrode potentials, unless there was only one simulation
+debug.expand_field = 0 # displays the first 3 orders of multipole coefficient values
+debug.trap_knobs = 0   # displays plots of multipole controls
+debug.post_process_trap = 0 # displays plots of electrode values, RF potential, and DC potential
+debug.pfit = 0         # displays plots of pseudopotential and trap potential
+debug.soef = 0         # displays progress in exact_saddle optimizations
+debug.trap_depth = 0   # displays assorted values for the final trap depth
 
 #################################################################################
 ################################ import_data ####################################
@@ -76,18 +76,28 @@ trapFile = savePath+name+'.pkl'
 expansionOrder = 4 # order of multipole expansion, nearly always 2
 assert expansionOrder <= regenOrder
 reg = 0 # by regularization we mean minimizing the norm of el with addition of vectors belonging to the kernel of tf.config.multipoleCoefficients
+"""Define the electrode and multipole mappings here. 
+We want to know which rows and columns of the multipole coefficients we want to use for the inversion to teh multipole controls.
+Each is initially an array of 0 with length equal to the number of electrodes or multipoles, respectively.
+elMap - each indexed electrode is removed and added to the electrode indexed by each value
+electrodes - each set to 0 will not be used for the inversion in trap_knobs; 0 is RF, the rest are DC, and the final is the center
+manuals - each nonzero element turns off the index electrode and forces its voltage to be the specified value; units are in Volts
+multipoles - each set to 0 will not be used for the inversion in trap_knobs; 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, etc."""
+
+elMap = np.arange(numElectrodes) # default electrode mapping
 #elMap[2] = 3 # clears electrode 2 and adds it to 3
-electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center; unselected are manual
+electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center
 multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
 electrodes[:] = 1 # turns on all electrodes
 electrodes[0] = 0 # not made redundant by rfbias in manual because we may want RF turned off without setting it to anything
+manuals = np.zeros(numElectrodes) # will typically use this in place of deactivating electrodes directly
+manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing beyond setting electrodes[0]
+# manuals[6] = 2 # sets the 6th DC electrode to be 2V
 multipoles[0:9] = 1 # turns on all orders 0 to 2 multipoles
 # multipoles[6] = 1 # turns on the DC multipole
 # multipoles[16:25] = 1 # turns on all 4th order multipoles
 # multipoles[8] = 1 # turns on eth RF multipole
 # multipoles[:] = 1 # turns on all multipoles up to expansionOrder
-manuals = np.zeros(numElectrodes) # will typically use this in place of deactivating electrodes directly
-manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing beyond setting electrodes[0]
 for el in range(numElectrodes):
     if manuals[el]:
         electrodes[el] = 0      
