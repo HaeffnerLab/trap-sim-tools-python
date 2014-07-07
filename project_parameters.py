@@ -11,6 +11,8 @@ me=9.10938188e-31 # electron mass
 mp=1.67262158e-27 # proton mass
 
 # Universal Parameters
+SQIP = 1   # for testing with G_Trap
+CCT = 0    # for testing with CCT trap
 fourth = 0 # for testing synthetic data
 save  = 1  # saves data to python pickle
 debug = TreeDict()
@@ -29,7 +31,7 @@ debug.trap_depth = 0   # displays assorted values for the final trap depth
 """Includes project parameters relevant to import_data to build entire project in one script."""
 simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
 baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
-projectName = 'base_grid' # arbitrarily named by user
+projectName = 'import_testing' # arbitrarily named by user
 useDate = 0 # determine if simulation files are saved with our without date in name  
 timeNow = datetime.datetime.now().date() # the present date and time 
 fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
@@ -57,7 +59,7 @@ zMin = 5/scale      # lowest value along the rectangular axis
 zMax = 105/scale    # highest value along the rectangular axis
 zStep = 100/scale   # range of each simulation
 r0 = 1              # scaling value, nearly always one
-name = 'numerical9' # name of final, composite, single-simulation data structure; may also be string of choice              
+name = 'all_mult_but_third_order' # name of final, composite, single-simulation data structure; may also be string of choice              
 trap = savePath+name+'.pkl'
 
 #################################################################################
@@ -83,7 +85,6 @@ elMap - each indexed electrode is removed and added to the electrode indexed by 
 electrodes - each set to 0 will not be used for the inversion in trap_knobs; 0 is RF, the rest are DC, and the final is the center
 manuals - each nonzero element turns off the index electrode and forces its voltage to be the specified value; units are in Volts
 multipoles - each set to 0 will not be used for the inversion in trap_knobs; 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, etc."""
-
 elMap = np.arange(numElectrodes) # default electrode mapping
 #elMap[2] = 3 # clears electrode 2 and adds it to 3
 electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center
@@ -95,7 +96,7 @@ manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing b
 # manuals[6] = 2 # sets the 6th DC electrode to be 2V
 multipoles[0:9] = 1 # turns on all orders 0 to 2 multipoles
 # multipoles[6] = 1 # turns on the DC multipole
-# multipoles[16:25] = 1 # turns on all 4th order multipoles
+multipoles[16:25] = 1 # turns on all 4th order multipoles
 # multipoles[8] = 1 # turns on eth RF multipole
 # multipoles[:] = 1 # turns on all multipoles up to expansionOrder
 for el in range(numElectrodes):
@@ -134,8 +135,10 @@ coefs = np.zeros((expansionOrder+1)**2) # this is the array of desired weights t
 # Note that these are the opposite sign of the actual electric field, which is the negative gradient of the potential.
 # The (x**2-y**2)/2 RF-like term has index 8 and the z**2 term has index 6.
 # The z**3 term is index 12 and the z**4 term is index 20.
+# coefs[4] = 10
 coefs[6] = 10 # default value to z**2 term, which varies from about 5 to 15
 # coefs[8] = -65 # default value to RF term, which varies from about 0 to -65
+# multipoles[20] = 1
 # coefs[20] = -200 # default value to z**4 term, which varies from about 0 to -300
 # coefs[4:9] /= np.sqrt(4*np.pi/5) # conversion factor for 2nd order
 # coefs[16:25] /= np.sqrt(8*np.pi/3) # conversion factor for 4th order
@@ -166,4 +169,75 @@ if fourth:
     multipoles[20] = 1
     coefs[20] = 100
     
-    
+if CCT:
+    baseDataName = 'A_fingers_e3_field-pt' # Excludes the number at the end to refer to a set of text file simulations
+    projectName = 'atrap_cct' # arbitrarily named by user
+    useDate = 0 # determine if simulation files are saved with our without date in name  
+    timeNow = datetime.datetime.now().date() # the present date and time 
+    fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
+    if not useDate:
+        fileName = projectName
+    simCount = [1,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
+    numElectrodes = 24          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
+    position = 760/scale # trapping position along the trap axis (microns)
+    zMin = 755/scale      # lowest value along the rectangular axis
+    zMax = 765/scale    # highest value along the rectangular axis
+    zStep = 10/scale   # range of each simulation
+    name = 'CCT_y_test' # name of final, composite, single-simulation data structure; may also be string of choice              
+    trap = savePath+name+'.pkl'
+    trapFile = savePath+name+'.pkl' 
+    elMap = np.arange(numElectrodes) # default electrode mapping
+    #elMap[2] = 3 # clears electrode 2 and adds it to 3
+    electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center
+    multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
+    electrodes[:] = 1 # turns on all electrodes
+    electrodes[0] = 0 # not made redundant by rfbias in manual because we may want RF turned off without setting it to anything
+    manuals = np.zeros(numElectrodes) # will typically use this in place of deactivating electrodes directly
+    manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing beyond setting electrodes[0]
+    # manuals[6] = 2 # sets the 6th DC electrode to be 2V
+    multipoles[0:9] = 1 # turns on all orders 0 to 2 multipoles
+    for el in range(numElectrodes):
+        if manuals[el]:
+            electrodes[el] = 0      
+    # valid if 1
+    coefs = np.zeros((expansionOrder+1)**2) # this is the array of desired weights to multipole coefficients
+    coefs[4] = 10 # default value to z**2 term, which varies from about 5 to 15
+    coefs[6] = 10
+    coefs[8] = 10
+    driveAmplitude = 100 # Applied RF amplitude for analysis, typically 100 mV 
+    driveFrequency = 35e6 # RF frequency for ppt3 analysis, typically 35 MH
+
+if SQIP:
+    baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
+    projectName = 'SQIP_testing' # arbitrarily named by user
+    useDate = 0 # determine if simulation files are saved with our without date in name  
+    timeNow = datetime.datetime.now().date() # the present date and time 
+    fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
+    if not useDate:
+        fileName = projectName
+    simCount = [6,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
+    numElectrodes = 21          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
+    position = 55/scale # trapping position along the trap axis (microns)
+    zMin = 5/scale      # lowest value along the rectangular axis
+    zMax = 105/scale    # highest value along the rectangular axis
+    zStep = 100/scale   # range of each simulation
+    name = 'SQIP_testing' # name of final, composite, single-simulation data structure; may also be string of choice              
+    trap = savePath+name+'.pkl'
+    trapFile = savePath+name+'.pkl' 
+    elMap = np.arange(numElectrodes) # default electrode mapping
+    electrodes = np.zeros(numElectrodes) # 0 is RF, the rest are DC, and the final is the center
+    multipoles = np.zeros((expansionOrder+1)**2) # 0 is constant, 1-3 are z (2nd), 4-8 are z**2 (6th), 9 to 15 are z**3, 16 to 25 are z**4 (20th)
+    electrodes[:] = 1 # turns on all electrodes
+    electrodes[0] = 0 # not made redundant by rfbias in manual because we may want RF turned off without setting it to anything
+    manuals = np.zeros(numElectrodes) # will typically use this in place of deactivating electrodes directly
+    manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing beyond setting electrodes[0]
+    multipoles[0:9] = 1 # turns on all orders 0 to 2 multipoles
+    for el in range(numElectrodes):
+        if manuals[el]:
+            electrodes[el] = 0    
+    coefs = np.zeros((expansionOrder+1)**2) # this is the array of desired weights to multipole coefficients
+    coefs[4] = 0 # default value to z**2 term, which varies from about 5 to 15
+    coefs[6] = 10
+    coefs[8] = -65
+    driveAmplitude = 50 # Applied RF amplitude for analysis, typically 50 mV 
+    driveFrequency = 50e6 # RF frequency for ppt3 analysis, typically 50 MH
