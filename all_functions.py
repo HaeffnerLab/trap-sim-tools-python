@@ -1,10 +1,14 @@
 """This is all functions and scripts used by the simulation. All relevant abstraction in project_parameters and analyze_trap."""
+import numpy as np
+import scipy.optimize as spo
+import matplotlib.pyplot as plt
+from treedict import TreeDict
+import all_functions
 
 # Primary Functions 
 def test_fourth():
     """Construct a text files representing BEM-solver trap simulations.
     This creates 8 electrodes, covering RF, constant, E fields, z**2, and z**4 multipoles."""
-    import numpy as np
     from project_parameters import simulationDirectory,debug
     low,high = -5,6 # defines data with i,j,k=(-2,-1,0,1,2), symmetric for saddle point at origin
     electrode_count = 8 # number of DC electrodes, including the one equivalent to the RF
@@ -34,7 +38,6 @@ def test_fourth():
 def test_text():
     """Construct a pair of text files representing BEM-solver trap simulations.
     This makes the primary synthetic data structure for testing."""
-    import numpy as np
     from project_parameters import simulationDirectory,debug
     low,high = -2,3 # defines data with i,j,k=(-2,-1,0,1,2), symmetric for saddle point at origin
     electrode_count = 14 # number of DC electrodes, including the one equivalent to the RF
@@ -107,9 +110,7 @@ def import_data():
     *All other conventions are defined and described in project_parameters."""
     from project_parameters import simCount,perm,dataPointsPerAxis,numElectrodes,save,debug,scale
     from project_parameters import baseDataName,simulationDirectory,fileName,savePath,timeNow,useDate
-    from treedict import TreeDict
     import pickle
-    import numpy as np
     # renaming for convenience
     na, ne = dataPointsPerAxis, numElectrodes 
     [startingSimulation,numSimulations] = simCount
@@ -154,9 +155,9 @@ def import_data():
         coord=np.vstack((XY,Z))
         coord=coord.T
         X,Y,Z = coord[:,perm[0]]/scale,coord[:,perm[1]]/scale,coord[:,perm[2]]/scale
-        #Y = Y-50/scale
-        #Z = Z-55/scale
-        print X,Y,Z
+        if debug.import_data:
+            print ('Printing grid vectors X,Y, and Z:')
+            print (X,Y,Z)
         #3) load all the voltages and E vector into struct using dynamic naming 
         struct=TreeDict() # begin intermediate shorthand.
         for el in range(ne): #el refers to the electrode, +1 is to include EL_0, the RF electrode
@@ -185,7 +186,6 @@ def import_data():
         s.perm = perm
         #sim.systemInformation = s
         if debug.import_data: # Plot each electrode
-            from all_functions import plot_potential
             print(plot_potential(sim.EL_RF,X,Y,Z,'1D plots','Debug: RF electrode'))
             for el in range(1,ne):                
                 print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
@@ -212,15 +212,13 @@ def get_trap():
     #0) define parameters
     from project_parameters import fileName,savePath,position,zMin,zMax,zStep,save,debug,name,simCount,charge,mass,r0
     import pickle
-    import numpy as np
-    from treedict import TreeDict
     tf=TreeDict() # begin shorthand for trap data structure
     pathName = savePath+fileName+'_simulation_'
     #1) Check if the number of overlapping data structures is the same as the number of simulations.
     # simCount was imported again (after import_data used it) because it is used as a check for user input consistency
-    numSim=int(np.ceil(float(zMax-zMin)/zStep))
+    numSim=int(np.ceil(float(zMax-zMin)/zStep-1e-9))
     if numSim!=simCount[1]:
-        print numSim,simCount
+        print numSim,simCount,float(zMax-zMin)/zStep
         raise Exception('Inconsistency in simulation number. Check project_parameters for consistency.')
     if numSim==1:
         print('If there is only one simulation, use that one. Same debug as import_data.')
@@ -341,13 +339,11 @@ def get_trap():
     #9) check if field generated successfully
     if debug.get_trap:
         sim = tf.potentials
-        X,Y,Z = sim.X,sim.Y,sim.Z # grid vectors           
-        import matplotlib.pyplot as plt
+        X,Y,Z = sim.X,sim.Y,sim.Z # grid vectors  
         plt.plot(Z,np.arange(len(Z)))
         plt.title('get_trap: contnuous straight line if successful')
         plt.show()  
         sim = tf.potentials
-        from all_functions import plot_potential
         print(plot_potential(sim.EL_RF,X,Y,Z,'2D plots','Debug: RF electrode'))
         for el in range(1,ne):               
             print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
@@ -382,8 +378,7 @@ def expand_field():
     Converted to by Python by William, Jan 2014"""
     #0) establish parameters and open updated trap with including instance configuration attributes
     from project_parameters import savePath,name,Xcorrection,Ycorrection,regenOrder,save,debug,E,pureMultipoles
-    from all_functions import spher_harm_bas,spher_harm_exp,spher_harm_cmp,spher_harm_qlt,find_saddle,exact_saddle,plot_potential,dc_potential
-    import numpy as np
+    #from all_functions import spher_harm_bas,spher_harm_exp,spher_harm_cmp,spher_harm_qlt,find_saddle,exact_saddle,plot_potential,dc_potential
     import pickle
     trap = savePath+name+'.pkl'
     file = open(trap,'rb')
@@ -443,11 +438,14 @@ def expand_field():
         Vdc = dc_potential(trap,multipoleDCVoltages,E) 
         if debug.expand_field:
             plot_potential(Vdc,X,Y,Z,'1D plots',('Old EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
-        Q = spher_harm_exp(Vdc,dcbasis,dcscale)  
+            # Vdc += 0*Vdc-Vdc[Irf,Jrf,Krf]
+            # plot_potential(Vdc,X,Y,Z,'1D plots',('Shifted EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
+        Q = spher_harm_exp(Vdc,dcbasis,dcscale) 
         print('Regenerating Electrode {} potential...'.format(el))
         Mi,Mj = Q.copy(),Q.copy() # intermediate, will be rescaled for plotting in spher_harm_cmp
         tf.potentials['EL_DC_{}'.format(el)]=spher_harm_cmp(Mi,dcbasis,dcscale,int(order[el]))
         if debug.expand_field:
+            print Q[0:9]
             plot_potential(tf.potentials['EL_DC_{}'.format(el)],X,Y,Z,'1D plots',('EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
         Q = Mj   
         Mt[:,el] = Q[0:N].T  
@@ -478,8 +476,7 @@ def trap_knobs():
     print('Executing trap_knobs...')
     #0) Define parameters and heck to see what scripts have been run
     from project_parameters import save,debug,trapFile,elMap,electrodes,multipoles,name,simulationDirectory,reg
-    from all_functions import nullspace,plotN
-    import numpy as np
+    #from all_functions import nullspace,plotN
     import pickle
     file = open(trapFile,'rb')
     trap = pickle.load(file)
@@ -556,7 +553,7 @@ def trap_knobs():
         for ml in range(totM):
             if multipoles[ml]:
                 plot = c[:,ml]
-                #plotN(plot,'Multipole {}'.format(ml)) 
+                plotN(plot,'Multipole {}'.format(ml)) 
     #8) update instance configuration with multipole controls to be used bu dc_voltages in post_process_trap
     tc.multipoleKernel = K
     tc.multipoleControl = c
@@ -565,15 +562,16 @@ def trap_knobs():
     #8.5) change the order of the columns of c for labrad
     # originally (after constant) Ez,Ey,Ex,U3,U4,U2,U5,U1,...,Y4-4,...,Y40,...,Y44
     # we want it to be Ex,Ey,Ez,U2,U1,U3,U5,U4,...,Y40 and then end before any of the other 4th order terms
-    cc = c.copy()
-    cc[:,1] = c[:,3] # Ex
-    cc[:,2] = c[:,1] # Ey
-    cc[:,3] = c[:,2] # Ez
-    cc[:,4] = c[:,6] # U2
-    cc[:,5] = c[:,8]
-    cc[:,6] = 0 # U3
-    cc[:,16]= c[:,20]# Y40
-    cc[:,20]= 0
+#     cc = c.copy()
+#     cc[:,1] = c[:,3] # Ex
+#     cc[:,2] = c[:,1] # Ey
+#     cc[:,3] = c[:,2] # Ez
+#     cc[:,4] = c[:,6] # U2
+#     cc[:,5] = c[:,8]
+#     cc[:,6] = 0 # U3
+#     cc[:,16]= c[:,20]# Y40
+#     cc[:,20]= 0
+    cc = c
     #9) save trap and save c as a text file (called the "C" file for Labrad)
     if save: 
         import pickle
@@ -581,7 +579,8 @@ def trap_knobs():
         output = open(trapFile,'wb')
         pickle.dump(trap,output)
         output.close()
-        ct = cc[1:totE,1:17] #eliminate the RF electrode and constant multipole; eliminate everything past Y40
+        #ct = cc[1:totE,1:17] #eliminate the RF electrode and constant multipole; eliminate everything past Y40
+        ct = cc[1:totE,1:25] # only eliminate the constant
         text = np.zeros((ct.shape[0])*(ct.shape[1]))
         for j in range(ct.shape[1]):
             for i in range(ct.shape[0]):
@@ -603,8 +602,7 @@ def post_process_trap():
     William Python Feb 2014""" 
     #################### 0) assign internal values #################### 
     from project_parameters import debug,savePath,name,driveAmplitude,driveFrequency,Omega,dcplot,weightElectrodes,coefs,ax,az,phi,save,scale
-    from all_functions import find_saddle,plot_potential,dc_potential,set_voltages,exact_saddle,spher_harm_bas,spher_harm_exp,pfit,plotN
-    import numpy as np
+    #from all_functions import find_saddle,plot_potential,dc_potential,set_voltages,exact_saddle,spher_harm_bas,spher_harm_exp,pfit,plotN
     import pickle    
     trap = savePath+name+'.pkl'
     file = open(trap,'rb')
@@ -623,17 +621,21 @@ def post_process_trap():
     E = tf.instance.E
     out = tf.configuration
     if debug.post_process_trap:
-        print dcVoltages,np.max(dcVoltages)#np.sum(abs(dcVoltages))
-        plotN(dcVoltages,'set DC voltages')
-#         Vdc = dc_potential(trap,dcVoltages,E)
-#         [XDC,YDC,ZDC] = find_saddle(Vdc,X,Y,Z,3,Zval)
-#         dcbasis,dcscale= spher_harm_bas(XDC,YDC,ZDC,X,Y,Z,4)
-#         QQ = spher_harm_exp(Vdc,dcbasis,dcscale) 
-#         print QQ
+        #print dcVoltages,np.max(dcVoltages)#np.sum(abs(dcVoltages))
+        #plotN(dcVoltages,'set DC voltages')
+        Vdc = dc_potential(trap,dcVoltages,E)
+        [IDC,JDC,KDC] = find_saddle(Vdc,X,Y,Z,3,Zval)        
+        #[XDC,YDC,ZDC] = exact_saddle(Vdc,X,Y,Z,3,Zval)
+        XDC,YDC,ZDC = X[IDC],150/scale,Z[KDC]
+        print XDC,YDC,ZDC,IDC,JDC,KDC
+        dcbasis,dcscale= spher_harm_bas(XDC,YDC,ZDC,X,Y,Z,4)
+        QQ = spher_harm_exp(Vdc,dcbasis,dcscale) 
+        print QQ[0:9].T
     #1) RF Analysis
     print('RF Analysis')           
     Vrf = RFampl*data.EL_RF
     [Irf,Jrf,Krf] = find_saddle(Vrf,X,Y,Z,2,Zval)
+    print X[10],Y[12],Z[10]
     if debug.post_process_trap:
         plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
     #2) DC Analysis
@@ -665,6 +667,7 @@ def post_process_trap():
     [fx,fy,fz,theta,Depth,Xe,Ye,Ze] = pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf)#pfit(trap,E,Freq,RFampl)
     print('Stray field is ({0},{1},{2}) V/m.'.format(scale*E[0],scale*E[1],scale*E[2]))
     print('With this field, the compensation is optimized to {} micron.'.format(scale*dist))
+    print Irf,Jrf,Krf,Idc,Jdc,Kdc
     print('RF saddle: ({0},{1},{2})\nDC saddle ({3},{4},{5}).'.format(Xrf,Yrf,Zrf,Xdc,Ydc,Zdc)) 
     if debug.trap_depth:
         print('The trap escape position is at ({0},{1},{2}) microns, for a trap depth of {3} mV'.format(Xe*scale,Ye*scale,Ze*scale,Depth*scale))
@@ -739,15 +742,14 @@ def dc_potential(trap,VMULT,E,update=None):
     update: name to save new file as; typically the same as the name used for get_trap
     Nikos, cleaned up June 2013
     William, converted to Python Jan 2014"""
-    import pickle, pprint
-    from all_functions import plot_potential
+    import pickle
+    #from all_functions import plot_potential
     file = open(trap,'rb')
     tf = pickle.load(file)
     file.close()
     p=tf.potentials # shorthand to refer to all potentials
     ne=tf.configuration.numElectrodes
     X,Y,Z=tf.potentials.X,tf.potentials.Y,tf.potentials.Z # grid vectors
-    import numpy as np
     x,y,z=np.meshgrid(X,Y,Z)   
     [Ex,Ey,Ez]=E
     Vout = np.zeros((p['EL_DC_1'].shape[0],p['EL_DC_1'].shape[1],p['EL_DC_1'].shape[2]))
@@ -780,7 +782,6 @@ def set_voltages():
     William Python 2014""" 
     #0) set parameters
     from project_parameters import savePath,name,multipoleControls,reg,driveFrequency,ax,az,phi,coefs,manuals
-    import numpy as np
     import pickle
     trap = savePath+name+'.pkl'
     file = open(trap,'rb')
@@ -825,7 +826,7 @@ def set_voltages():
     return el 
 
 def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
-    """find the secular frequencies, tilt angle, and position of the dc 
+    """Find the secular frequencies, tilt angle, and position of the dc 
     saddle point for given combined input parameters. 
     fx,fy,fz are the secular frequencies
     theta is the angle of rotation from the p2d transformation (rotation)
@@ -834,8 +835,7 @@ def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
     Xe,Ye,Ze are the coordinates of the escape position
     William Python February 2014."""
     #1) find dc potential
-    import numpy as np
-    from all_functions import plot_potential,p2d,trap_depth,find_saddle,exact_saddle
+    #from all_functions import plot_potential,p2d,trap_depth,find_saddle,exact_saddle
     from project_parameters import charge,mass,driveAmplitude,Omega,debug,scale
     #2) find pseudopotential
     """Gebhard, Oct 2010:
@@ -852,9 +852,9 @@ def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
 #         plot_potential(Ey,X,Y,Z,'1D plots','Ey','U_{ps} (eV)',[Irf,Jrf,Krf])
 #         plot_potential(Ez,X,Y,Z,'1D plots','Ez','U_{ps} (eV)',[Irf,Jrf,Krf])    
 #         plot_potential(Esq,X,Y,Z,'1D plots','E**2','U_{ps} (eV)',[Irf,Jrf,Krf])
-#         plot_potential(Vrf,X,Y,Z,'1D plots','Vrf','U_{rf} (eV)',[Irf,Jrf,Krf])
-#         plot_potential(PseudoPhi/charge,X,Y,Z,'1D plots','Pseudopotential','U_{ps} (eV)',[Irf,Jrf,Krf])
-        plot_potential(Vdc,X,Y,Z,'1D plots','DC Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
+        plot_potential(Vrf,X,Y,Z,'1D plots','Vrf','U_{rf} (eV)',[Irf,Jrf,Krf])
+        plot_potential(PseudoPhi/charge,X,Y,Z,'1D plots','Pseudopotential','U_{ps} (eV)',[Irf,Jrf,Krf])
+#         plot_potential(Vdc,X,Y,Z,'1D plots','DC Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
         plot_potential(U/charge,X,Y,Z,'1D plots','Trap Potential','U_{sec} (eV)',[Irf,Jrf,Krf])
     #4) determine trap frequencies and tilt in radial directions
     Uxy = U[Irf-3:Irf+4,Jrf-3:Jrf+4,Krf]
@@ -897,9 +897,7 @@ def exact_saddle(V,X,Y,Z,dim,Z0=None):
     Revisited for Octave compatibility 5/25/13.
     Needs Octave >3.6, pakages general, miscellaneous, struct, optim. 
     William Python Jan 2014"""
-    import numpy as np
-    import scipy.optimize as spo
-    from all_functions import find_saddle,sum_of_e_field
+    #from all_functions import find_saddle,sum_of_e_field
     if dim==3:
         [I,J,K]=find_saddle(V,X,Y,Z,3) # guess saddle point; Z0 not needed
         r0=[X[I],Y[J],Z[K]]
@@ -964,9 +962,7 @@ def find_saddle(V,X,Y,Z,dim,Z0=None):
     For dim==2, the values of A are linearly extrapolated from [Z0] and [Z0]+1
     to those corresponding to Z0 and Ks is such that z[Ks]<Z0, z[Ks+1]>=Z0."""
     debug=False # internal code only; typically False
-    import numpy as np
     from project_parameters import scale
-    import matplotlib.pyplot as plt
     if (dim==2 and Z0==None):
         return 'z0 needed for evaluation'
     if dim==3:
@@ -1065,8 +1061,6 @@ def mesh_slice(V,n,X,Y,Z):
     X,Y,X are vectors that define the grid in three dimensions
     William Python Jan 2014
     """
-    import numpy as np
-    import matplotlib.pyplot as plt
     from matplotlib import cm
     import mpl_toolkits.mplot3d.axes3d as p3
     import time
@@ -1133,15 +1127,12 @@ def plot_potential(V,X,Y,Z,key='1D plots',tit=None,ylab=None,origin=None):
     tit is the title of the plots to be produced.
     ylab is the label on the y axis of the plot produced.
     William Python Jan 2014"""
-    import matplotlib.pyplot as plt
     print 'running plot_potential...',key
     if origin==None:
-        from all_functions import exact_saddle,find_saddle
         origin=find_saddle(V,X,Y,Z,3)
     if (key==0 or key=='no plots'):
         return 
     if (key==1 or key=='2D plots' or key==3 or key=='both'): # 2D Plots, animation
-        from all_functions import mesh_slice
         mesh_slice(V,0,X,Y,Z) 
         mesh_slice(V,1,X,Y,Z) 
         mesh_slice(V,2,X,Y,Z) 
@@ -1180,10 +1171,8 @@ def p2d(V,x,y):
     We are not sure if the angle is correct when x and y are not centered on zero."""
     def s(a,N):
         """Shortcut function to convert array x into a coluumn vector."""
-        import numpy as np
         a=np.reshape(a,(1,N**2),order='F').T
         return a
-    import numpy as np
     N=V.shape[1]
     con=np.ones((x.shape[0],x.shape[1])) # constant terms
     xx,yy,xy=x*x,y*y,x*y
@@ -1212,8 +1201,6 @@ def plotN(trap,title=None,convention=None):
     Possible to add in different conventions later.
     Nikos, July 2009
     William Python 2014"""
-    import numpy as np
-    import matplotlib.pyplot as plt
     from matplotlib import cm 
     import mpl_toolkits.mplot3d.axes3d as p3
     N=trap.shape[0]
@@ -1241,7 +1228,6 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
     """Make the real spherical harmonic matrix in sequence of [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...]
     In other words: Calculate the basis vectors of the sph. harm. expansion:  """
     import math as mt
-    import numpy as np
     from scipy.special import lpmv
     # Construct variables from axes; no meshgrid as of 6/4/14; no potential as of 6/12/14
     nx,ny,nz=X.shape[0],Y.shape[0],Z.shape[0]
@@ -1268,13 +1254,13 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
     # Make the spherical harmonic matrix in sequence of [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...]
     # In other words: Calculate the basis vectors of the sph. harm. expansion: 
     Yj = np.zeros((nx*ny*nz,(Order+1)**2))
-    Yj[:,0] = 1
+    fp = np.sqrt(1/(4*np.pi))
+    Yj[:,0] = fp*np.sqrt(2)
     mc = 1
     for n in range(1,Order+1):
         for m in range(n+1):
             #ymn = np.sqrt((2*n+1)/(4*np.pi))*r**n*lpmv(m,n,np.cos(theta))
             ymn = r**n*lpmv(m,n,np.cos(theta))
-            fp = np.sqrt(1/(4*np.pi))
             ymn = fp*ymn*np.sqrt((2*n+1))#/(4*np.pi))
             if m==0:
                 #Yj[:,mc] = ymn
@@ -1295,7 +1281,6 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
 
 def spher_harm_exp(V,Yj,scale):
     """Solves for the coefficients Mj that best combine with the basis to produce the potential field V."""
-    import numpy as np
     # Convert the 3D DC potential into 1D array.
     # Numerically invert, here the actual expansion takes place and we obtain the expansion coefficients M_{j}.
     W=np.ravel(V,order='F') # 1D array of all potential values
@@ -1320,7 +1305,6 @@ def spher_harm_cmp(C,Yj,scale,Order):
     while s is sin(m*phi).
     Now it is: V=C1*Y00+C2*Y1-1+C3*Y10+C4*Y11+...
     Nikos June 2009"""
-    import numpy as np
     import math as mt 
     from scipy.special import sph_harm
     V=[]
@@ -1363,9 +1347,7 @@ def spher_harm_qlt(V,C,Xc,Yc,Zc,Order,Xe,Ye,Ze,tit):
      1 2  3  4       5             6    7     8       9
     Nikos January 2009
     William Python Jan 2014"""
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from all_functions import spher_harm_bas,spher_harm_cmp
+    #from all_functions import spher_harm_bas,spher_harm_cmp
     s=V.shape
     nx,ny,nz=s[0],s[1],s[2]
     basis = spher_harm_bas(Xc,Yc,Zc,Xe,Ye,Ze,Order)
@@ -1399,10 +1381,9 @@ def sum_of_e_field(r,V,X,Y,Z,exact_saddle=True):
     is at x0,y0,z0.
     Used by exact_saddle for 3-d saddle search.
     Note that order of outputs for spher_harm_exp are changed, but 1 to 3 should still be E field."""
-    import numpy as np
     from project_parameters import debug
     x0,y0,z0=r[0],r[1],r[2]
-    from all_functions import spher_harm_exp
+    #from all_functions import spher_harm_exp
     basis,rnorm = spher_harm_bas(x0,y0,z0,X,Y,Z,3)
     c=spher_harm_exp(V,basis,rnorm) #Update these variables by abstraction.
     if debug.soef:
@@ -1423,10 +1404,9 @@ def sum_of_e_field_2d(r,z0,V,X,Y,Z,exact_saddle=True):
     is at x0,y0,z0.
     Used by exact_saddle for 3-d saddle search.
     Note that order of outputs for spher_harm_exp are changed, but 1 to 3 should still be E field."""
-    import numpy as np
     from project_parameters import debug
     x0,y0=r[0],r[1]
-    from all_functions import spher_harm_exp
+    #from all_functions import spher_harm_exp
     basis,rnorm = spher_harm_bas(x0,y0,z0,X,Y,Z,4)
     c=spher_harm_exp(V,basis,rnorm) #Update these variables by abstraction.
     if debug.soef:
@@ -1465,7 +1445,6 @@ def nullspace(A, atol=1e-13, rtol=0):
         nullspace of `A`.  The columns of `ns` are a basis for the
         nullspace; each element in numpy.dot(A, ns) will be approximately
         zero."""
-    import numpy as np
     from numpy.linalg import svd
     A = np.atleast_2d(A)
     u, s, vh = svd(A)
@@ -1486,10 +1465,9 @@ def trap_depth_old(V,X,Y,Z,Im,Jm,Km,debug=False):
     X,Y,Z are vectors defining the grid in X,Y,Z directions.
     Im,Jm,Km are the indices of the trap potential minimum (ion position)."""  
     from project_parameters import debug
-    from all_functions import sum_of_e_field
+    #from all_functions import sum_of_e_field
     def a(a,N):
         """Shortcut function to convert array x into a row vector.""" 
-        import numpy as np
         a=np.ravel(a, order='F') # Same order
         return a
     def index_sort(y,x):
@@ -1501,8 +1479,6 @@ def trap_depth_old(V,X,Y,Z,Im,Jm,Km,debug=False):
             j=ix[i]
             ys[i]=y[j]
         return ys
-    import numpy as np
-    import matplotlib.pyplot as plt
     if len(V.shape)!=3:
         return('Problem with find_saddle.py dimensionalities.\n')
     N1,N2,N3=V.shape
@@ -1566,13 +1542,11 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km):
     X,Y,Z are vectors defining the grid in X,Y,Z directions.
     Im,Jm,Km are the indices of the trap potential minimum (ion position)."""  
     from project_parameters import debug,scale,position
-    from all_functions import sum_of_e_field,spher_harm_bas,spher_harm_exp,spher_harm_cmp,find_saddle
+    #from all_functions import sum_of_e_field,spher_harm_bas,spher_harm_exp,spher_harm_cmp,find_saddle
     def a(a,N):
         """Shortcut function to convert array x into a row vector.""" 
-        import numpy as np
         a=np.ravel(a, order='F') # Same order
         return a
-    import numpy as np
     N1,N2,N3=V.shape
     N=N1*N2*N3
     [Ex,Ey,Ez]=np.gradient(V,abs(X[1]-X[0])/scale,abs(Y[1]-Y[0])/scale,abs(Z[1]-Z[0])/scale)
@@ -1593,7 +1567,8 @@ def trap_depth(V,X,Y,Z,Im,Jm,Km):
                         minElectricField=E[i,j,k]
                         escapeHeight=V[i,j,k]
                         escapePosition=[i,j,k]
-                        print E[i,j,k],V[i,j,k],[i,j,k],distance
+                        if debug.trap_depth: 
+                            print E[i,j,k],V[i,j,k],[i,j,k],distance
     check=1 
     if debug.trap_depth: 
         print minElectricField,escapeHeight,escapePosition,distance   
