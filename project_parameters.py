@@ -11,14 +11,14 @@ me=9.10938188e-31 # electron mass
 mp=1.67262158e-27 # proton mass
 
 # Universal Parameters
-SQIP = 1   # for testing with G_Trap
+SQIP = 0   # for testing with G_Trap
 CCT = 0    # for testing with CCT trap
 fourth = 0 # for testing synthetic data
 save  = 1  # saves data to python pickle
 debug = TreeDict()
 debug.import_data = 0  # displays potential of every electrode for every simulation
 debug.get_trap = 0     # displays the newly connected electrode potentials, unless there was only one simulation
-debug.expand_field = 0 # displays the first 3 orders of multipole coefficient values
+debug.expand_field = 1 # displays the first 3 orders of multipole coefficient values
 debug.trap_knobs = 0   # displays plots of multipole controls
 debug.post_process_trap = 0 # displays plots of electrode values, RF potential, and DC potential
 debug.pfit = 0         # displays plots of pseudopotential and trap potential
@@ -29,20 +29,23 @@ debug.trap_depth = 0   # displays assorted values for the final trap depth
 ################################ import_data ####################################
 #################################################################################
 """Includes project parameters relevant to import_data to build entire project in one script."""
-simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
-baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
-projectName = 'import_testing' # arbitrarily named by user
+#simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
+#baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
+simulationDirectory = '/home/dylan/trap_simulations/old-lattice/'
+baseDataName = 'lattice_3d_trap'
+projectName = 'lattice_3d_trap' # arbitrarily named by user
 useDate = 0 # determine if simulation files are saved with our without date in name  
 timeNow = datetime.datetime.now().date() # the present date and time 
 fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
 if not useDate:
     fileName = projectName
-simCount = [6,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
-dataPointsPerAxis = 21      # old NUM_AXIS 5, the number of data points along each axis of the cubic electrode potential
-numElectrodes = 22          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
-savePath = 'C:\\Python27\\trap_simulation_software\\data\\' # directory to save data at
+simCount = [1,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
+dataPointsPerAxis = 101      # old NUM_AXIS 5, the number of data points along each axis of the cubic electrode potential
+numElectrodes = 2          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
+#savePath = 'C:\\Python27\\trap_simulation_software\\data\\' # directory to save data at
+savePath = '/home/dylan/trap_simulations/old-lattice/'
 scale = 1000. # based on BEM-solver grid units; we want mm internally, so if BEM is in microns, put 1000. (decimal for 2.7) here and grid vectors will be rescaled
-perm = [0,2,1] 
+perm = [0,1,2] 
 ###COORDINATES Nikos code uses y- height, z - axial, x - radial
 #if drawing uses x - axial, y - radial, z - height, use perm = [1,2,0] (Euro trap)
 #if drawing uses y - axial, x - radial, z - height, use perm = [0,2,1] (Sqip D trap, GG trap)
@@ -54,12 +57,12 @@ perm = [0,2,1]
 """fieldConfig, previously trapConfiguration; not all variables will be passed to output
 Parameters used for get_trapping_field, expand_field, and trap_knobs
 Some of the required parameters are listed with import config."""
-position = 55/scale # trapping position along the trap axis (microns)
-zMin = 5/scale      # lowest value along the rectangular axis
-zMax = 105/scale    # highest value along the rectangular axis
-zStep = 100/scale   # range of each simulation
+position = 0/scale # trapping position along the trap axis (microns)
+zMin = -600/scale      # lowest value along the rectangular axis
+zMax = 600/scale    # highest value along the rectangular axis
+zStep = 1200/scale   # range of each simulation
 r0 = 1              # scaling value, nearly always one
-name = 'all_mult_but_third_order' # name of final, composite, single-simulation data structure; may also be string of choice              
+name = 'old-lattice' # name of final, composite, single-simulation data structure; may also be string of choice              
 trap = savePath+name+'.pkl'
 
 #################################################################################
@@ -67,7 +70,7 @@ trap = savePath+name+'.pkl'
 #################################################################################
 Xcorrection = 0 # known offset from the RF saddle point
 Ycorrection = 0 # known offset from the RF saddle point
-regenOrder  = 9 # order to regenerate the data to, typically 2
+regenOrder  = 2 # order to regenerate the data to, typically 2
 E = [0,0,0]     # known electric field to correct for 
 pureMultipoles = 0
 
@@ -75,7 +78,7 @@ pureMultipoles = 0
 ############################### trap_knobs ######################################
 #################################################################################
 trapFile = savePath+name+'.pkl'  
-expansionOrder = 4 # order of multipole expansion, nearly always 2
+expansionOrder = 2 # order of multipole expansion, nearly always 2
 assert expansionOrder <= regenOrder
 reg = 0 # by regularization we mean minimizing the norm of el with addition of vectors belonging to the kernel of tf.config.multipoleCoefficients
 """Define the electrode and multipole mappings here. 
@@ -96,7 +99,7 @@ manuals[0] = 0 # refer to first index for RFbias, setting to zero does nothing b
 # manuals[6] = 2 # sets the 6th DC electrode to be 2V
 multipoles[0:9] = 1 # turns on all orders 0 to 2 multipoles
 # multipoles[6] = 1 # turns on the DC multipole
-multipoles[16:25] = 1 # turns on all 4th order multipoles
+# multipoles[16:25] = 1 # turns on all 4th order multipoles
 # multipoles[8] = 1 # turns on eth RF multipole
 # multipoles[:] = 1 # turns on all multipoles up to expansionOrder
 for el in range(numElectrodes):

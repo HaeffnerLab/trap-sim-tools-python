@@ -217,6 +217,7 @@ def get_trap():
     #1) Check if the number of overlapping data structures is the same as the number of simulations.
     # simCount was imported again (after import_data used it) because it is used as a check for user input consistency
     numSim=int(np.ceil(float(zMax-zMin)/zStep-1e-9))
+    print numSim
     if numSim!=simCount[1]:
         print numSim,simCount,float(zMax-zMin)/zStep
         raise Exception('Inconsistency in simulation number. Check project_parameters for consistency.')
@@ -1297,7 +1298,7 @@ def spher_harm_exp(V,Yj,scale):
             Mj[i] = Mj[i]/(scale**n)
     return Mj
  
-def spher_harm_cmp(C,Yj,scale,Order): 
+def spher_harm_cmp(C,Yj,scale,Order):
     """http://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics
     This function computes the potential V from the spherical harmonic coefficients,
     which used to be: V=C1*Y00+C2*Y10+C3*Y11c+C4*Y11s+...
