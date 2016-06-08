@@ -81,6 +81,7 @@ class simulation():
         N = (order + 1)**2 # number of multipoles
 
         self.multipole_expansions = np.zeros((N, self.numElectrodes))
+        self.expansion_order = order
 
         X, Y, Z = self.X, self.Y, self.Z
 
@@ -106,3 +107,38 @@ class simulation():
         If some electrodes are shorted, only use one of each
         set in controlled_electrodes.
         '''
+
+        # First adjust the multipole_expansions matrix
+        # to account for electrodes shorted together
+        # To do this, add the multipole vector for each
+        # shorted electrode together
+        M_shorted = self.multipole_expansions.copy()
+        N = M_shorted[:,0].shape[0] # length of the multipole expansion vector
+        for s in shorted_electrodes:
+            vec = np.zeros(N)
+            for el in s:
+                vec += self.multipole_expansions[:, el]
+            [M_shorted[:, el] = vec for el in s]
+
+        # multipole expansion matrix after accounting for shorted electrodes
+        # and uncontrolled electrodes
+        self.reduced_multipole_expansions = np.zeros((N, len(controlled_electrodes)))
+        for k, el in enumerate(controlled_electrodes):
+            self.reduced_multipole_expansions[:, k] = M_shorted[:,el]
+
+    def generate_control_matrix(self, controlled_multipoles):
+        '''
+        Generates the multipole control matrix
+
+        controlled_multipoles: list of integers
+        specifying which multipoles are to be controlled
+        0, 1, 2 correspond to Ex, Ey, Ez
+        3-8 correspond to to the quadrupoles
+        
+        '''
+
+        multipoles = np.zeros((self.expansion_order+1)**2)
+        for k in controlled_multipoles:
+            multipoles[k] = 1
+
+        
