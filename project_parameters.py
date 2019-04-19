@@ -18,12 +18,12 @@ save  = 1  # saves data to python pickle
 debug = TreeDict()
 debug.import_data = 0  # displays potential of every electrode for every simulation
 debug.get_trap = 0     # displays the newly connected electrode potentials, unless there was only one simulation
-debug.expand_field = 1 # displays the first 3 orders of multipole coefficient values
-debug.trap_knobs = 0   # displays plots of multipole controls
+debug.expand_field = 0 # displays the first 3 orders of multipole coefficient values
+debug.trap_knobs = 1   # displays plots of multipole controls
 debug.post_process_trap = 0 # displays plots of electrode values, RF potential, and DC potential
-debug.pfit = 0         # displays plots of pseudopotential and trap potential
-debug.soef = 0         # displays progress in exact_saddle optimizations
-debug.trap_depth = 0   # displays assorted values for the final trap depth
+debug.pfit = 1         # displays plots of pseudopotential and trap potential
+debug.soef = 1         # displays progress in exact_saddle optimizations
+debug.trap_depth = 1   # displays assorted values for the final trap depth
 
 #################################################################################
 ################################ import_data ####################################
@@ -31,21 +31,21 @@ debug.trap_depth = 0   # displays assorted values for the final trap depth
 """Includes project parameters relevant to import_data to build entire project in one script."""
 #simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
 #baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
-simulationDirectory = '/home/dylan/trap_simulations/old-lattice/'
-baseDataName = 'lattice_3d_trap'
-projectName = 'lattice_3d_trap' # arbitrarily named by user
-useDate = 0 # determine if simulation files are saved with our without date in name  
+simulationDirectory = 'HOA_trap_v1/'
+baseDataName = 'RS1096_12400_1_28only'
+projectName = 'HOA_v1' # arbitrarily named by user
+useDate = 1 # determine if simulation files are saved with our without date in name  
 timeNow = datetime.datetime.now().date() # the present date and time 
 fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
 if not useDate:
     fileName = projectName
 simCount = [1,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
-dataPointsPerAxis = 101      # old NUM_AXIS 5, the number of data points along each axis of the cubic electrode potential
-numElectrodes = 2          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
+dataPointsPerAxis = [941,13,15]      # old NUM_AXIS 5, the number of data points along each axis of the cubic electrode potential
+numElectrodes = 29          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
 #savePath = 'C:\\Python27\\trap_simulation_software\\data\\' # directory to save data at
-savePath = '/home/dylan/trap_simulations/old-lattice/'
-scale = 1000. # based on BEM-solver grid units; we want mm internally, so if BEM is in microns, put 1000. (decimal for 2.7) here and grid vectors will be rescaled
-perm = [0,1,2] 
+savePath = 'HOA_trap_v1/'
+scale = 1. # based on BEM-solver grid units; we want mm internally, so if BEM is in microns, put 1000. (decimal for 2.7) here and grid vectors will be rescaled
+perm = [1,2,0] 
 ###COORDINATES Nikos code uses y- height, z - axial, x - radial
 #if drawing uses x - axial, y - radial, z - height, use perm = [1,2,0] (Euro trap)
 #if drawing uses y - axial, x - radial, z - height, use perm = [0,2,1] (Sqip D trap, GG trap)
@@ -57,12 +57,12 @@ perm = [0,1,2]
 """fieldConfig, previously trapConfiguration; not all variables will be passed to output
 Parameters used for get_trapping_field, expand_field, and trap_knobs
 Some of the required parameters are listed with import config."""
-position = 0/scale # trapping position along the trap axis (microns)
-zMin = -600/scale      # lowest value along the rectangular axis
-zMax = 600/scale    # highest value along the rectangular axis
-zStep = 1200/scale   # range of each simulation
+position = 0/scale # trapping position along the trap axis (mm)
+zMin = -2308.5/scale      # lowest value along the rectangular axis
+zMax = 2308.5/scale    # highest value along the rectangular axis
+zStep = 0.005/scale   # range of each simulation
 r0 = 1              # scaling value, nearly always one
-name = 'old-lattice' # name of final, composite, single-simulation data structure; may also be string of choice              
+name = 'HOA' # name of final, composite, single-simulation data structure; may also be string of choice              
 trap = savePath+name+'.pkl'
 
 #################################################################################

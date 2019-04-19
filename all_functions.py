@@ -135,40 +135,37 @@ def import_data():
         #########################################################################################
         # Read txt file
         print('Importing '+''+baseDataName+str(iterationNumber)+'...')
-        dataName=(simulationDirectory+baseDataName+str(iterationNumber)+'.txt')
+        XName=(simulationDirectory+baseDataName+'X'+'.txt')
+        YName=(simulationDirectory+baseDataName+'Y'+'.txt')
+        ZName=(simulationDirectory+baseDataName+'Z'+'.txt')
+        VName=(simulationDirectory+baseDataName+'V'+'.txt')
         #1) check if there is BEM-solver data to import
         try: 
-            DataFromTxt=np.loadtxt(dataName,delimiter=',') 
+            XFromTxt=np.loadtxt(XName,delimiter=',')
+            YFromTxt=np.loadtxt(YName,delimiter=',')
+            ZFromTxt=np.loadtxt(ZName,delimiter=',')
+            VFromTxt=np.loadtxt(VName,delimiter=',')
         except IOError:
             return ('No BEM-solver data to import for simulation {}. Import complete.'.format(iterationNumber))
         #2) build the X,Y,Z grids
-        X,Y,Z = [0],[0],DataFromTxt[0:na,2]
-        for i in range(0,(na)):
-            if i==0:
-                X[0]=(DataFromTxt[na**2*i+1,0])
-                Y[0]=(DataFromTxt[na*i+1,1])
-            else:
-                X.append(DataFromTxt[na**2*i+1,0])
-                Y.append(DataFromTxt[na*i+1,1])
-        X,Y = np.array(X).T,np.array(Y).T
-        XY = np.vstack((X,Y))
-        coord=np.vstack((XY,Z))
-        coord=coord.T
-        X,Y,Z = coord[:,perm[0]]/scale,coord[:,perm[1]]/scale,coord[:,perm[2]]/scale
+        X=np.array(XFromTxt)
+        Y=np.array(YFromTxt)
+        Z=np.array(ZFromTxt)
         if debug.import_data:
             print ('Printing grid vectors X,Y, and Z:')
             print (X,Y,Z)
         #3) load all the voltages and E vector into struct using dynamic naming 
+        V=np.array(VFromTxt)
         struct=TreeDict() # begin intermediate shorthand.
+
         for el in range(ne): #el refers to the electrode, +1 is to include EL_0, the RF electrode
-            struct['EL_DC_{}'.format(el)]=np.zeros((na,na,na))
-            for i in range(na):
-                for j in range (na):
-                    lb = na**3*(el) + na**2*i + na*j # lower bound defined by electrodes complete and axes passed
-                    ub = lb + na # upper bound defined by an increase by axis length
-                    struct['EL_DC_{}'.format(el)][i,j,:]=DataFromTxt[lb:ub,3]
-            struct['EL_DC_{}'.format(el)]=np.transpose(struct['EL_DC_{}'.format(el)],perm)
-        del DataFromTxt
+            Vs = V[na[0]*na[1]*na[2]*el:na[0]*na[1]*na[2]*(el+1)]
+            struct['EL_DC_{}'.format(el)]=Vs.reshape(na[0],na[1],na[2])
+            #struct['EL_DC_{}'.format(el)]=np.transpose(struct['EL_DC_{}'.format(el)],perm)
+        del XFromTxt
+        del YFromTxt
+        del ZFromTxt
+        del VFromTxt
         #4) Build the simulation data structure
         sim=struct                                # copy over intermediate dynamic data structure
         sim.X,sim.Y,sim.Z=X,Y,Z                   # set grid vectors
@@ -216,7 +213,7 @@ def get_trap():
     pathName = savePath+fileName+'_simulation_'
     #1) Check if the number of overlapping data structures is the same as the number of simulations.
     # simCount was imported again (after import_data used it) because it is used as a check for user input consistency
-    numSim=int(np.ceil(float(zMax-zMin)/zStep-1e-9))
+    numSim=1#int(np.ceil(float(zMax-zMin)/zStep-1e-9))
     print numSim
     if numSim!=simCount[1]:
         print numSim,simCount,float(zMax-zMin)/zStep
@@ -422,8 +419,8 @@ def expand_field():
         plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     #2) Expand the RF about its saddle point at the trapping position and save the quadrupole components.
     print('Determining RF saddle')
-    [Xrf,Yrf,Zrf] = exact_saddle(tc.EL_RF,X,Y,Z,2,position) 
-    [Irf,Jrf,Krf] = find_saddle(tc.EL_RF,X,Y,Z,2,position) 
+    [Xrf,Yrf,Zrf] = exact_saddle(tc.EL_RF,X,Y,Z,3,position) 
+    [Irf,Jrf,Krf] = find_saddle(tc.EL_RF,X,Y,Z,3,position) 
     print('Building DC Basis')
     dcbasis,dcscale = spher_harm_bas(Xrf+Xcorrection,Yrf+Ycorrection,Zrf,X,Y,Z,int(order[0]))
     Qrf = spher_harm_exp(tc.EL_RF,dcbasis,dcscale)  
@@ -493,7 +490,7 @@ def trap_knobs():
     tc = trap.configuration
     mc = tc.multipoleCoefficients # this is the original, maximum-length multipole coefficients matrix (multipoles,electrodes)
     for row in range(totM):
-        row+=1
+        #row+=1
         if abs(np.sum(mc[row,:])) < 10**-50: # arbitrarily small
             return 'trap_knobs: row {} is all 0, can not solve least square, stopping trap knobs'.format(row)
     #2) Apply electrode mapping by clearing some electrodes and adding them to the new map
@@ -648,7 +645,7 @@ def post_process_trap():
     #3) determine the exact saddles of the RF and DC
     Vdc = dc_potential(trap,dcVoltages,E)
     print('Determining exact RF saddle...')
-    [Xrf,Yrf,Zrf] = exact_saddle(Vrf,X,Y,Z,2,Zval)  
+    [Xrf,Yrf,Zrf] = exact_saddle(Vrf,X,Y,Z,3,Zval)  
     print('Determining exact DC saddle...')
     [Xdc,Ydc,Zdc] = exact_saddle(Vdc,X,Y,Z,3,Zval)
     #4) determine stray field (beginning of justAnalyzeTrap)
@@ -757,7 +754,7 @@ def dc_potential(trap,VMULT,E,update=None):
     # build up the potential from the normal DC elctrodes
     for ii in range(ne):
         Vout = Vout + VMULT[ii]*p['EL_DC_{}'.format(ii)]
-    Vout = Vout-Ex*x-Ey*y-Ez*z
+    Vout = Vout#-Ex*x-Ey*y-Ez*z
     # update the trapping field data structure with instance attributes
     tf.instance.DC=Vout
     tf.instance.RF=p.EL_RF # not needed, but may be useful notation
@@ -1205,7 +1202,7 @@ def plotN(trap,title=None,convention=None):
     from matplotlib import cm 
     import mpl_toolkits.mplot3d.axes3d as p3
     N=trap.shape[0]
-    n=np.floor(N/2)
+    n=np.int(np.floor(N/2))
     A=np.zeros((10*n,20))
     for i in range(int(n)): # Left electrodes.
         A[10*(n-i-1)+1:10*(n-i),1:3]=trap[i+1]
@@ -1232,6 +1229,9 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
     from scipy.special import lpmv
     # Construct variables from axes; no meshgrid as of 6/4/14; no potential as of 6/12/14
     nx,ny,nz=X.shape[0],Y.shape[0],Z.shape[0]
+    print nx
+    print ny
+    print nz
     x,y,z = np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz))
     for i in range(nx):
         for j in range(ny):
@@ -1240,7 +1240,10 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
                 y[i,j,k] = Y[j]-Yc
                 z[i,j,k] = Z[k]-Zc
     x,y,z=np.ravel(x,order='F'),np.ravel(y,order='F'),np.ravel(z,order='F') 
+    print x
     r,rt=np.sqrt(x*x+y*y+z*z),np.sqrt(x*x+y*y)
+    print r
+    print rt
     # Normalize with geometric mean, 3/15/14 (most recently); makes error go down about order of magnitude
     rsort=np.sort(r)
     rmin=rsort[1] # first element is 0 
@@ -1308,6 +1311,7 @@ def spher_harm_cmp(C,Yj,scale,Order):
     Nikos June 2009"""
     import math as mt 
     from scipy.special import sph_harm
+    from project_parameters import dataPointsPerAxis as na
     V=[]
     if C.shape[0]!=(Order+1)**2:
         while True:
@@ -1324,7 +1328,7 @@ def spher_harm_cmp(C,Yj,scale,Order):
     W=np.dot(Yj,C)
     N = len(W)
     n = int(N**(1/3.0))+1
-    V=W.reshape(n,n,n,order='F').copy()
+    V=W.reshape(na[0],na[1],na[2],order='F').copy()
     return np.real(V)
 
 def spher_harm_qlt(V,C,Xc,Yc,Zc,Order,Xe,Ye,Ze,tit):

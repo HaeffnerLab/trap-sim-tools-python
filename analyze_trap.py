@@ -6,5 +6,5 @@ Finally, run post_process_trap to calculate the trap frequencies."""
 print(import_data())
 print(get_trap())
 print(expand_field())
-#print(trap_knobs())
-#print (post_process_trap())
+print(trap_knobs())
+print (post_process_trap())
