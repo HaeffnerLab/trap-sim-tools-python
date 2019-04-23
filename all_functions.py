@@ -115,7 +115,9 @@ def import_data():
     na, ne = dataPointsPerAxis, numElectrodes 
     [startingSimulation,numSimulations] = simCount
     # iterate through each simulation text file
-    for iterationNumber in range(startingSimulation,startingSimulation+numSimulations):        
+    print simCount
+    for iterationNumber in range(startingSimulation,startingSimulation+numSimulations):  
+        print iterationNumber      
         #########################################################################################
         #0) Check if data already exists 
         def fileCheck(iterationNumber):
@@ -134,7 +136,7 @@ def import_data():
             return 'All files have been imported.'
         #########################################################################################
         # Read txt file
-        print('Importing '+''+baseDataName+str(iterationNumber)+'...')
+        print('Importing '+''+baseDataName+'...')
         XName=(simulationDirectory+baseDataName+'X'+'.txt')
         YName=(simulationDirectory+baseDataName+'Y'+'.txt')
         ZName=(simulationDirectory+baseDataName+'Z'+'.txt')
@@ -148,19 +150,27 @@ def import_data():
         except IOError:
             return ('No BEM-solver data to import for simulation {}. Import complete.'.format(iterationNumber))
         #2) build the X,Y,Z grids
-        X=np.array(XFromTxt)
-        Y=np.array(YFromTxt)
-        Z=np.array(ZFromTxt)
+        Xi=np.array(XFromTxt)
+        Yi=np.array(YFromTxt)
+        Zi=np.array(ZFromTxt)
         if debug.import_data:
             print ('Printing grid vectors X,Y, and Z:')
             print (X,Y,Z)
+        #get everything into expected directions (described in project_paramters)
+        coords = [Xi,Yi,Zi]
+        X = coords[perm[0]]/scale
+        Y = coords[perm[1]]/scale
+        Z = coords[perm[2]]/scale
+
         #3) load all the voltages and E vector into struct using dynamic naming 
         V=np.array(VFromTxt)
         struct=TreeDict() # begin intermediate shorthand.
 
         for el in range(ne): #el refers to the electrode, +1 is to include EL_0, the RF electrode
             Vs = V[na[0]*na[1]*na[2]*el:na[0]*na[1]*na[2]*(el+1)]
-            struct['EL_DC_{}'.format(el)]=Vs.reshape(na[0],na[1],na[2])
+            Vs = Vs.reshape(na[0],na[1],na[2])
+            Vs = np.transpose(Vs,perm)
+            struct['EL_DC_{}'.format(el)]=Vs
             #struct['EL_DC_{}'.format(el)]=np.transpose(struct['EL_DC_{}'.format(el)],perm)
         del XFromTxt
         del YFromTxt
@@ -392,6 +402,8 @@ def expand_field():
     tf = pickle.load(file)
     file.close()
     V,X,Y,Z=tf.instance.DC,tf.instance.X,tf.instance.Y,tf.instance.Z
+    print "first Vshape"
+    print V.shape
     tc=tf.configuration #intermediate shorthand for configuration
     position = tc.position
     tc.EL_RF = tf.potentials.EL_RF
@@ -419,8 +431,8 @@ def expand_field():
         plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     #2) Expand the RF about its saddle point at the trapping position and save the quadrupole components.
     print('Determining RF saddle')
-    [Xrf,Yrf,Zrf] = exact_saddle(tc.EL_RF,X,Y,Z,3,position) 
-    [Irf,Jrf,Krf] = find_saddle(tc.EL_RF,X,Y,Z,3,position) 
+    [Xrf,Yrf,Zrf] = exact_saddle(tc.EL_RF,X,Y,Z,2,position) 
+    [Irf,Jrf,Krf] = find_saddle(tc.EL_RF,X,Y,Z,2,position) 
     print('Building DC Basis')
     dcbasis,dcscale = spher_harm_bas(Xrf+Xcorrection,Yrf+Ycorrection,Zrf,X,Y,Z,int(order[0]))
     Qrf = spher_harm_exp(tc.EL_RF,dcbasis,dcscale)  
@@ -926,13 +938,14 @@ def exact_saddle(V,X,Y,Z,dim,Z0=None):
                 if Z[i-1]<Z0 and Z[i]>=Z0:
                     K=i-1
         Vs = V.shape
-        if K>=Vs[1]: # Matlab had Z, not V; also changed from == to >=
+        if K>=Vs[2]: # Matlab had Z, not V; also changed from == to >=
             return('The selected coordinate is at the end of range.')
         v1=V[:,:,K-1] # potential to left
         v2=V[:,:,K] # potential to right (actually right at estimate; K+1 to be actually to right)
         V2=v1+(v2-v1)*(Z0-Z[K-1])/(Z[K]-Z[K-1]) # averaged potential around given coordinate
         [I,J,K0]=find_saddle(V,X,Y,Z,2,Z0) 
         r0=X[I],Y[J]
+        print 1
         if (I<2 or I>V.shape[0]-2): 
             print('exact_saddle.py: Saddle point out of bounds in radial direction.\n')
             return r0
@@ -949,6 +962,9 @@ def exact_saddle(V,X,Y,Z,dim,Z0=None):
         r=spo.minimize(sum_of_e_field_2d,r0,args=(Z0,Vn,Xn,Yn,Zn)) 
         r=r.x # unpack for desired values
         Xs,Ys,Zs=r[0],r[1],Z0
+        print Xs
+        print Ys
+        print Zs
     return [Xs,Ys,Zs]
  
 def find_saddle(V,X,Y,Z,dim,Z0=None):
@@ -1021,7 +1037,7 @@ def find_saddle(V,X,Y,Z,dim,Z0=None):
                     if Z0<1:
                         Ks+=1
             Vs=V.shape
-            if Ks>=Vs[1]: # Matlab had Z, not V; also changed from == to >=
+            if Ks>=Vs[2]: # Matlab had Z, not V; also changed from == to >=
                 return('The selected coordinate is at the end of range.')
             v1=V[:,:,Ks] 
             v2=V[:,:,Ks+1]
@@ -1229,9 +1245,6 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
     from scipy.special import lpmv
     # Construct variables from axes; no meshgrid as of 6/4/14; no potential as of 6/12/14
     nx,ny,nz=X.shape[0],Y.shape[0],Z.shape[0]
-    print nx
-    print ny
-    print nz
     x,y,z = np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz)),np.zeros((nx,ny,nz))
     for i in range(nx):
         for j in range(ny):
@@ -1240,10 +1253,7 @@ def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
                 y[i,j,k] = Y[j]-Yc
                 z[i,j,k] = Z[k]-Zc
     x,y,z=np.ravel(x,order='F'),np.ravel(y,order='F'),np.ravel(z,order='F') 
-    print x
     r,rt=np.sqrt(x*x+y*y+z*z),np.sqrt(x*x+y*y)
-    print r
-    print rt
     # Normalize with geometric mean, 3/15/14 (most recently); makes error go down about order of magnitude
     rsort=np.sort(r)
     rmin=rsort[1] # first element is 0 
@@ -1311,7 +1321,7 @@ def spher_harm_cmp(C,Yj,scale,Order):
     Nikos June 2009"""
     import math as mt 
     from scipy.special import sph_harm
-    from project_parameters import dataPointsPerAxis as na
+    from project_parameters import dataPointsPerAxis,perm
     V=[]
     if C.shape[0]!=(Order+1)**2:
         while True:
@@ -1328,7 +1338,8 @@ def spher_harm_cmp(C,Yj,scale,Order):
     W=np.dot(Yj,C)
     N = len(W)
     n = int(N**(1/3.0))+1
-    V=W.reshape(na[0],na[1],na[2],order='F').copy()
+    na = [dataPointsPerAxis[i] for i in perm]
+    V=W.reshape(na,order='F').copy()
     return np.real(V)
 
 def spher_harm_qlt(V,C,Xc,Yc,Zc,Order,Xe,Ye,Ze,tit):
