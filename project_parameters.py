@@ -19,11 +19,12 @@ debug = TreeDict()
 debug.import_data = 0  # displays potential of every electrode for every simulation
 debug.get_trap = 0     # displays the newly connected electrode potentials, unless there was only one simulation
 debug.expand_field = 0 # displays the first 3 orders of multipole coefficient values
-debug.trap_knobs = 1   # displays plots of multipole controls
-debug.post_process_trap = 0 # displays plots of electrode values, RF potential, and DC potential
+debug.trap_knobs = 0   # displays plots of multipole controls
+debug.post_process_trap = 1 # displays plots of electrode values, RF potential, and DC potential
 debug.pfit = 1         # displays plots of pseudopotential and trap potential
 debug.soef = 1         # displays progress in exact_saddle optimizations
-debug.trap_depth = 1   # displays assorted values for the final trap depth
+debug.trap_depth = 0   # displays assorted values for the final trap depth
+trapType = 'HOA'
 
 #################################################################################
 ################################ import_data ####################################
@@ -32,14 +33,14 @@ debug.trap_depth = 1   # displays assorted values for the final trap depth
 #simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
 #baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
 simulationDirectory = 'HOA_trap_v1/'
-baseDataName = 'RS1096_12400_1_28only'
+baseDataName = 'DAConly'
 projectName = 'HOA_v1' # arbitrarily named by user
 useDate = 1 # determine if simulation files are saved with our without date in name  
 timeNow = datetime.datetime.now().date() # the present date and time 
 fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
 if not useDate:
     fileName = projectName
-simCount = [1,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
+simCount = [0,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
 dataPointsPerAxis = [941,13,15]      # old NUM_AXIS 5, the number of data points along each axis of the cubic electrode potential
 numElectrodes = 29          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
 #savePath = 'C:\\Python27\\trap_simulation_software\\data\\' # directory to save data at
@@ -58,11 +59,11 @@ perm = [1,2,0]
 Parameters used for get_trapping_field, expand_field, and trap_knobs
 Some of the required parameters are listed with import config."""
 position = 0/scale # trapping position along the trap axis (mm)
-zMin = -2308.5/scale      # lowest value along the rectangular axis
-zMax = 2308.5/scale    # highest value along the rectangular axis
+zMin = -2.3085/scale      # lowest value along the rectangular axis
+zMax = 2.3085/scale    # highest value along the rectangular axis
 zStep = 0.005/scale   # range of each simulation
 r0 = 1              # scaling value, nearly always one
-name = 'HOA' # name of final, composite, single-simulation data structure; may also be string of choice              
+name = 'HOA_DAC' # name of final, composite, single-simulation data structure; may also be string of choice              
 trap = savePath+name+'.pkl'
 
 #################################################################################
@@ -112,9 +113,9 @@ for el in range(numElectrodes):
 # We no longer use findEfield or anything other than justAnalyzeTrap
 # findCompensation = 0 # this will alwys be False
 # findEfield       = 0 # this will always be False
-justAnalyzeTrap  = 1 # do not optimize, just analyze the trap, assuming everything is ok
-rfplot = '1D plots'  # dimensions to plot RF with plotpot, may be 'no plots', '1D plots', '2D plots', or 'both
-dcplot = '1D plots'  # dimensions to plot DC with plotpot
+justAnalyzeTrap  = 0 # do not optimize, just analyze the trap, assuming everything is ok
+rfplot = '2D plots'  # dimensions to plot RF with plotpot, may be 'no plots', '1D plots', '2D plots', or 'both
+dcplot = '2D plots'  # dimensions to plot DC with plotpot
 
 # set_voltages, old trap operation parameters
 weightElectrodes  = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # VMAN for dcpotential_instance in expand_field

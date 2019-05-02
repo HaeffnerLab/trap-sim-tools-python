@@ -110,14 +110,13 @@ def import_data():
     *All other conventions are defined and described in project_parameters."""
     from project_parameters import simCount,perm,dataPointsPerAxis,numElectrodes,save,debug,scale
     from project_parameters import baseDataName,simulationDirectory,fileName,savePath,timeNow,useDate
+    from project_parameters import fileName,savePath,position,zMin,zMax,zStep,save,debug,name,simCount,charge,mass,r0
     import pickle
     # renaming for convenience
     na, ne = dataPointsPerAxis, numElectrodes 
     [startingSimulation,numSimulations] = simCount
     # iterate through each simulation text file
-    print simCount
-    for iterationNumber in range(startingSimulation,startingSimulation+numSimulations):  
-        print iterationNumber      
+    for iterationNumber in range(startingSimulation,startingSimulation+numSimulations):      
         #########################################################################################
         #0) Check if data already exists 
         def fileCheck(iterationNumber):
@@ -136,71 +135,79 @@ def import_data():
             return 'All files have been imported.'
         #########################################################################################
         # Read txt file
-        print('Importing '+''+baseDataName+'...')
-        XName=(simulationDirectory+baseDataName+'X'+'.txt')
-        YName=(simulationDirectory+baseDataName+'Y'+'.txt')
-        ZName=(simulationDirectory+baseDataName+'Z'+'.txt')
-        VName=(simulationDirectory+baseDataName+'V'+'.txt')
-        #1) check if there is BEM-solver data to import
-        try: 
-            XFromTxt=np.loadtxt(XName,delimiter=',')
-            YFromTxt=np.loadtxt(YName,delimiter=',')
-            ZFromTxt=np.loadtxt(ZName,delimiter=',')
-            VFromTxt=np.loadtxt(VName,delimiter=',')
+
+        #works with import_data_HOA -smouradi 04/19
+        print('Loading trap data from Sandia...')
+        fname = (simulationDirectory+baseDataName+'.pkl')
+        print fname
+        try:
+            f = open(fname,'rb')
         except IOError:
-            return ('No BEM-solver data to import for simulation {}. Import complete.'.format(iterationNumber))
-        #2) build the X,Y,Z grids
-        Xi=np.array(XFromTxt)
-        Yi=np.array(YFromTxt)
-        Zi=np.array(ZFromTxt)
-        if debug.import_data:
-            print ('Printing grid vectors X,Y, and Z:')
-            print (X,Y,Z)
+            return ('No pickle file found.')
+        trap = pickle.load(f)
+
+        Xi = trap['X'] #sandia defined coordinates
+        Yi = trap['Y']
+        Zi = trap['Z']
         #get everything into expected directions (described in project_paramters)
         coords = [Xi,Yi,Zi]
         X = coords[perm[0]]/scale
         Y = coords[perm[1]]/scale
         Z = coords[perm[2]]/scale
+        if debug.import_data:
+            print ('Printing grid vectors X,Y, and Z:')
+            print X.shape
+            print Y.shape
+            print Z.shape
 
-        #3) load all the voltages and E vector into struct using dynamic naming 
-        V=np.array(VFromTxt)
-        struct=TreeDict() # begin intermediate shorthand.
-
-        for el in range(ne): #el refers to the electrode, +1 is to include EL_0, the RF electrode
-            Vs = V[na[0]*na[1]*na[2]*el:na[0]*na[1]*na[2]*(el+1)]
+        sim=TreeDict() # begin intermediate shorthand.
+        el = 0
+        for key in trap['electrodes']: #el refers to the electrode, +1 is to include EL_0, the RF electrode
+            Vs = trap['electrodes'][key]['V']
             Vs = Vs.reshape(na[0],na[1],na[2])
             Vs = np.transpose(Vs,perm)
-            struct['EL_DC_{}'.format(el)]=Vs
-            #struct['EL_DC_{}'.format(el)]=np.transpose(struct['EL_DC_{}'.format(el)],perm)
-        del XFromTxt
-        del YFromTxt
-        del ZFromTxt
-        del VFromTxt
+            electrode = TreeDict()
+            electrode.potential = Vs
+            electrode.name = trap['electrodes'][key]['name']
+            electrode.position = trap['electrodes'][key]['position']
+            sim['EL_DC_{}'.format(el)] = electrode.copy()
+            el=el+1
+
+        del trap
         #4) Build the simulation data structure
-        sim=struct                                # copy over intermediate dynamic data structure
         sim.X,sim.Y,sim.Z=X,Y,Z                   # set grid vectors
-        sim.EL_RF = struct.EL_DC_0                # set RF potential field
-        s = sim                           # shorthand for defining import configuration branch
-        s.simulationDirectory = simulationDirectory
-        s.baseDataName = baseDataName
-        s.timeNow = timeNow
-        s.fileName = fileName
-        s.useDate = useDate
-        s.simCount = simCount
-        s.dataPointsPerAxis = na
-        s.numElectrodes = ne
-        s.savePath = savePath
-        s.perm = perm
-        #sim.systemInformation = s
+        sim.EL_RF = sim.EL_DC_0                # set RF potential field
+        sim.simulationDirectory = simulationDirectory
+        sim.baseDataName = baseDataName
+        sim.timeNow = timeNow
+        sim.fileName = fileName
+        sim.useDate = useDate
+        sim.simCount = simCount
+        sim.dataPointsPerAxis = na
+        sim.numElectrodes = ne
+        sim.savePath = savePath
+        sim.perm = perm
+
+        config = sim.configuration
+        sim.configuration.position = position
+        sim.configuration.numElectrodes = ne
+        sim.configuration.charge = charge
+        sim.configuration.mass = mass
+        sim.configuration.r0 = r0
+
         if debug.import_data: # Plot each electrode
-            print(plot_potential(sim.EL_RF,X,Y,Z,'1D plots','Debug: RF electrode'))
-            for el in range(1,ne):                
-                print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
+            print(plot_potential(sim.EL_RF.potential,X,Y,Z,'1D plots','RF electrode'))
+            for el in range(1,ne):  
+                electrode =  sim['EL_DC_{}'.format(el)]         
+                print(plot_potential(electrode.potential,X,Y,Z,\
+                    '1D plots','Electrode {},{} Position:{}'.format(el,electrode.name,electrode.position)))
         #5) save the particular simulation as a pickle data structure
+        print "import data"
+        save = True
         if save == True:
-            name=savePath+fileName+'_simulation_{}'.format(iterationNumber)+'.pkl'
-            print ('Saving '+name+' as a data structure...')
-            output = open(name,'wb')
+            nameOut=savePath+name+'.pkl'
+            print ('Saving '+nameOut+' as a data structure...')
+            output = open(nameOut,'wb')
             pickle.dump(sim,output)
             output.close()
     return 'Import complete.'
@@ -236,6 +243,8 @@ def get_trap():
         file.close()
         potential=tf.potentials    # base potential to write over
         ne=potential.numElectrodes
+        print "ne"
+        print ne
         trap = tf
         c=trap.configuration
         c.position = position 
@@ -355,7 +364,7 @@ def get_trap():
         print(plot_potential(sim.EL_RF,X,Y,Z,'2D plots','Debug: RF electrode'))
         for el in range(1,ne):               
             print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
-    #10) save new data structure as a pickle    
+    #10) save new data structure as a pickle  
     if save:
         import pickle
         name=savePath+name+'.pkl'
@@ -388,45 +397,37 @@ def expand_field():
     from project_parameters import savePath,name,Xcorrection,Ycorrection,regenOrder,save,debug,E,pureMultipoles
     #from all_functions import spher_harm_bas,spher_harm_exp,spher_harm_cmp,spher_harm_qlt,find_saddle,exact_saddle,plot_potential,dc_potential
     import pickle
-    trap = savePath+name+'.pkl'
-    file = open(trap,'rb')
-    tf = pickle.load(file)
-    file.close()
-    ne=tf.configuration.numElectrodes
+    trapFile = savePath + name + '.pkl'
+    with open(trapFile,'rb') as f:
+        trap = pickle.load(f)
+    ne=trap.configuration.numElectrodes
     if not debug.expand_field:
-        if tf.configuration.expand_field==True:
+        if trap.configuration.expand_field==True:
             return 'Field is already expanded.'
     VMULT= np.ones((ne,1)) # analogous to dcVolatages
-    dc_potential(trap,VMULT,E,True) # run dc_potential to create instance configuration
-    file = open(trap,'rb')
-    tf = pickle.load(file)
-    file.close()
-    V,X,Y,Z=tf.instance.DC,tf.instance.X,tf.instance.Y,tf.instance.Z
-    print "first Vshape"
-    print V.shape
-    tc=tf.configuration #intermediate shorthand for configuration
+    trap = dc_potential(trap,VMULT,E,True) # run dc_potential to add a instance structure to the full trap structure
+    V,X,Y,Z=trap.instance.DC,trap.instance.X,trap.instance.Y,trap.instance.Z
+    tc=trap.configuration #intermediate shorthand for configuration
     position = tc.position
-    tc.EL_RF = tf.potentials.EL_RF
+    tc.EL_RF = trap.EL_RF.potential
     if Xcorrection:
         print('expand_field: Correction of XRF: {} mm.'.format(str(Xcorrection)))
     if Ycorrection:
         print('expand_field: Correction of YRF: {} mm.'.format(str(Ycorrection)))
     # Order to expand to in spherharm for each electrode.
-    NUM_DC = ne # includes RF as DC_0
-    order = np.zeros(NUM_DC)
-    L = regenOrder
-    order[:]=int(L)
-    N=(L+1)**2 
+    order = np.zeros(ne)
+    order[:]=int(regenOrder)
+    N=(regenOrder+1)**2 
     #1) Expand the RF about the grid center, regenerate data from the expansion.
     print('Building RF potential')
-    Irf,Jrf,Krf = int(np.floor(X.shape[0]/2)),int(np.floor(Y.shape[0]/2)),int(np.floor(Z.shape[0]/2))
+    Irf,Jrf,Krf = int(np.floor(len(X)/2)),int(np.floor(len(Y)/2)),int(np.floor(len(Z)/2))
     Xrf,Yrf,Zrf = X[Irf],Y[Jrf],Z[Krf]
-    rfbasis,rfscale = spher_harm_bas(Xrf,Yrf,Zrf,X,Y,Z,L)
+    rfbasis,rfscale = spher_harm_bas(Xrf,Yrf,Zrf,X,Y,Z,regenOrder)
     Qrf = spher_harm_exp(tc.EL_RF,rfbasis,rfscale)
     if debug.expand_field: 
        plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     print('Comparing RF potential')
-    tc.EL_RF = spher_harm_cmp(Qrf,rfbasis,rfscale,L)
+    tc.EL_RF = spher_harm_cmp(Qrf,rfbasis,rfscale,regenOrder)
     if debug.expand_field: 
         plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     #2) Expand the RF about its saddle point at the trapping position and save the quadrupole components.
@@ -439,24 +440,24 @@ def expand_field():
     tc.Qrf = 2*[Qrf[7][0]*3,Qrf[4][0]/2,Qrf[8][0]*6,-Qrf[6][0]*3,-Qrf[5][0]*3]
     tc.thetaRF = 45*((Qrf[8][0]/abs(Qrf[8][0])))-90*np.arctan((3*Qrf[7][0])/(3*Qrf[8][0]))/np.pi
     #3) Regenerate each DC electrode
-    Mt=np.zeros((N,NUM_DC)) 
-    for el in range(0,NUM_DC): # Expand all the electrodes and  regenerate the potentials from the multipole coefficients; include RF
+    Mt=np.zeros((N,ne)) 
+    for el in range(0,ne): # Expand all the electrodes and  regenerate the potentials from the multipole coefficients; include RF
         print('Expanding DC Electrode {} ...'.format(el))        
-        multipoleDCVoltages = np.zeros(NUM_DC)
+        multipoleDCVoltages = np.zeros(ne)
         multipoleDCVoltages[el] = 1 
         E = [0,0,0]
-        Vdc = dc_potential(trap,multipoleDCVoltages,E) 
+        trap = dc_potential(trap,multipoleDCVoltages,E) 
         if debug.expand_field:
-            plot_potential(Vdc,X,Y,Z,'1D plots',('Old EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
+            plot_potential(trap.instance.DC,X,Y,Z,'1D plots',('Old EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
             # Vdc += 0*Vdc-Vdc[Irf,Jrf,Krf]
             # plot_potential(Vdc,X,Y,Z,'1D plots',('Shifted EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
-        Q = spher_harm_exp(Vdc,dcbasis,dcscale) 
+        Q = spher_harm_exp(trap.instance.DC,dcbasis,dcscale) 
         print('Regenerating Electrode {} potential...'.format(el))
         Mi,Mj = Q.copy(),Q.copy() # intermediate, will be rescaled for plotting in spher_harm_cmp
-        tf.potentials['EL_DC_{}'.format(el)]=spher_harm_cmp(Mi,dcbasis,dcscale,int(order[el]))
+        trap['EL_DC_{}'.format(el)].potential=spher_harm_cmp(Mi,dcbasis,dcscale,int(order[el]))
         if debug.expand_field:
             print Q[0:9]
-            plot_potential(tf.potentials['EL_DC_{}'.format(el)],X,Y,Z,'1D plots',('EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
+            plot_potential(trap['EL_DC_{}'.format(el)].potential,X,Y,Z,'1D plots',('EL_{} DC Potential'.format(el)),'V (Volt)',[Irf,Jrf,Krf])
         Q = Mj   
         Mt[:,el] = Q[0:N].T  
     #4) Define the multipole Coefficients
@@ -464,12 +465,9 @@ def expand_field():
     print('expand_field: Size of the multipole coefficient matrix is {}'.format(Mt.shape))
     if save: 
         tc.expand_field=True
-    tf.configuration=tc
-    dataout=tf
     if save: 
-        output = open(trap,'wb')
-        pickle.dump(tf,output)
-        output.close()
+        with open(trapFile,'wb') as f:
+            pickle.dump(trap,f)
     return 'expand_field: ended successfully.'
  
 def trap_knobs():
@@ -485,12 +483,11 @@ def trap_knobs():
     If the system is underdetermined, then there is no Kernel or regularization."""
     print('Executing trap_knobs...')
     #0) Define parameters and heck to see what scripts have been run
-    from project_parameters import save,debug,trapFile,elMap,electrodes,multipoles,name,simulationDirectory,reg
+    from project_parameters import save,debug,trapFile,elMap,electrodes,multipoles,name,simulationDirectory,reg,trapType
     #from all_functions import nullspace,plotN
     import pickle
-    file = open(trapFile,'rb')
-    trap = pickle.load(file)
-    file.close()
+    with open(trapFile,'rb') as f:
+        trap = pickle.load(f)
     if trap.configuration.expand_field!=True:
         return 'You must run expand_field first!'
     if trap.configuration.trap_knobs and not debug.trap_knobs:
@@ -563,7 +560,7 @@ def trap_knobs():
         for ml in range(totM):
             if multipoles[ml]:
                 plot = c[:,ml]
-                plotN(plot,'Multipole {}'.format(ml)) 
+                plotN(plot,trap,'Multipole {}'.format(ml)) 
     #8) update instance configuration with multipole controls to be used bu dc_voltages in post_process_trap
     tc.multipoleKernel = K
     tc.multipoleControl = c
@@ -584,11 +581,9 @@ def trap_knobs():
     cc = c
     #9) save trap and save c as a text file (called the "C" file for Labrad)
     if save: 
-        import pickle
         print('Saving '+name+' as a data structure...')
-        output = open(trapFile,'wb')
-        pickle.dump(trap,output)
-        output.close()
+        with open(trapFile,'wb') as f:
+            pickle.dump(trap,f)
         #ct = cc[1:totE,1:17] #eliminate the RF electrode and constant multipole; eliminate everything past Y40
         ct = cc[1:totE,1:25] # only eliminate the constant
         text = np.zeros((ct.shape[0])*(ct.shape[1]))
@@ -611,36 +606,36 @@ def post_process_trap():
     Nikos, January 2009
     William Python Feb 2014""" 
     #################### 0) assign internal values #################### 
-    from project_parameters import debug,savePath,name,driveAmplitude,driveFrequency,Omega,dcplot,weightElectrodes,coefs,ax,az,phi,save,scale
+    from project_parameters import trapType,debug,trapFile,name,driveAmplitude,driveFrequency,Omega,dcplot,weightElectrodes,coefs,ax,az,phi,save,scale
     #from all_functions import find_saddle,plot_potential,dc_potential,set_voltages,exact_saddle,spher_harm_bas,spher_harm_exp,pfit,plotN
-    import pickle    
-    trap = savePath+name+'.pkl'
-    file = open(trap,'rb')
-    tf = pickle.load(file)
-    file.close()
-    qe = tf.configuration.charge
-    mass = tf.configuration.mass
-    Zval = tf.configuration.position
-    r0 = tf.configuration.r0
+    import pickle
+
+    with open(trapFile,'rb') as f:
+        trap = pickle.load(f)
+
+    qe = trap.configuration.charge
+    mass = trap.configuration.mass
+    Zval = trap.configuration.position
+    r0 = trap.configuration.r0
     RFampl = driveAmplitude 
     V0 = mass*(2*np.pi*Omega)**2*(r0*10**-3)**2/qe
-    X,Y,Z=tf.instance.X,tf.instance.Y,tf.instance.Z    
-    data = tf.configuration
+    X,Y,Z=trap.instance.X,trap.instance.Y,trap.instance.Z    
+    data = trap.configuration
     dcVoltages = set_voltages()
     ne = len(weightElectrodes)
-    E = tf.instance.E
-    out = tf.configuration
+    E = trap.instance.E
+    out = trap.configuration
     if debug.post_process_trap:
-        #print dcVoltages,np.max(dcVoltages)#np.sum(abs(dcVoltages))
-        #plotN(dcVoltages,'set DC voltages')
+        print dcVoltages,np.max(dcVoltages)#np.sum(abs(dcVoltages))
+        plotN(dcVoltages,trap,'set DC voltages') 
         Vdc = dc_potential(trap,dcVoltages,E)
-        [IDC,JDC,KDC] = find_saddle(Vdc,X,Y,Z,3,Zval)        
+        #[IDC,JDC,KDC] = find_saddle(Vdc,X,Y,Z,3,Zval)        
         #[XDC,YDC,ZDC] = exact_saddle(Vdc,X,Y,Z,3,Zval)
-        XDC,YDC,ZDC = X[IDC],150/scale,Z[KDC]
-        print XDC,YDC,ZDC,IDC,JDC,KDC
-        dcbasis,dcscale= spher_harm_bas(XDC,YDC,ZDC,X,Y,Z,4)
-        QQ = spher_harm_exp(Vdc,dcbasis,dcscale) 
-        print QQ[0:9].T
+        #XDC,YDC,ZDC = X[IDC],150/scale,Z[KDC]
+        #print XDC,YDC,ZDC,IDC,JDC,KDC
+        #dcbasis,dcscale= spher_harm_bas(XDC,YDC,ZDC,X,Y,Z,4)
+        #QQ = spher_harm_exp(Vdc,dcbasis,dcscale) 
+        #print QQ[0:9].T
     #1) RF Analysis
     print('RF Analysis')           
     Vrf = RFampl*data.EL_RF
@@ -650,14 +645,16 @@ def post_process_trap():
         plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
     #2) DC Analysis
     print('DC Analysis')
-    Vdc = dc_potential(trap,dcVoltages,E,update=None)
+    trap = dc_potential(trap,dcVoltages,E,update=None)
+    Vdc = trap.instance.DC
     [Idc,Jdc,Kdc] = find_saddle(Vdc,X,Y,Z,3,Zval) # only used to calculate error at end
     if debug.post_process_trap:
         plot_potential(Vdc,X,Y,Z,'1D plots','full DC potential')
     #3) determine the exact saddles of the RF and DC
-    Vdc = dc_potential(trap,dcVoltages,E)
+    trap = dc_potential(trap,dcVoltages,E)
+    Vdc = trap.instance.DC
     print('Determining exact RF saddle...')
-    [Xrf,Yrf,Zrf] = exact_saddle(Vrf,X,Y,Z,3,Zval)  
+    [Xrf,Yrf,Zrf] = exact_saddle(Vrf,X,Y,Z,2,Zval)  
     print('Determining exact DC saddle...')
     [Xdc,Ydc,Zdc] = exact_saddle(Vdc,X,Y,Z,3,Zval)
     #4) determine stray field (beginning of justAnalyzeTrap)
@@ -718,22 +715,19 @@ def post_process_trap():
         out.alpha = (2/V0)*T*Qddc
         out.Error = [X[Idc]-Xdc,Y[Jdc]-Ydc,Z[Kdc]-Zdc]
     #7) update the trapping field data structure with instance attributes
-    tf.configuration=out
-    tf.instance.driveAmplitude = driveAmplitude
-    tf.instance.driveFrequency = driveFrequency
-    tf.instance.coefs = coefs
-    tf.instance.ax = ax
-    tf.instance.az = az
-    tf.instance.phi = phi
-    tf.instance.ppt = True
-    tf.instance.out = out
+    trap.configuration=out
+    trap.instance.driveAmplitude = driveAmplitude
+    trap.instance.driveFrequency = driveFrequency
+    trap.instance.coefs = coefs
+    trap.instance.ax = ax
+    trap.instance.az = az
+    trap.instance.phi = phi
+    trap.instance.ppt = True
+    trap.instance.out = out
     if save==True:
-        import pickle
-        update=trap
-        print('Saving '+update+' as a data structure...')
-        output = open(update,'wb')
-        pickle.dump(tf,output)
-        output.close()
+        print('Saving '+trapFile+' as a data structure...')
+        with open(trapFile,'wb') as f:
+            pickle.dump(trap,f)
     return 'post_proccess_trap complete' #out # no output needed really
 
 print('Referencing all_functions...')
@@ -752,36 +746,24 @@ def dc_potential(trap,VMULT,E,update=None):
     update: name to save new file as; typically the same as the name used for get_trap
     Nikos, cleaned up June 2013
     William, converted to Python Jan 2014"""
-    import pickle
-    #from all_functions import plot_potential
-    file = open(trap,'rb')
-    tf = pickle.load(file)
-    file.close()
-    p=tf.potentials # shorthand to refer to all potentials
-    ne=tf.configuration.numElectrodes
-    X,Y,Z=tf.potentials.X,tf.potentials.Y,tf.potentials.Z # grid vectors
+    ne=trap.configuration.numElectrodes
+    X,Y,Z=trap.X,trap.Y,trap.Z # grid vectors
     x,y,z=np.meshgrid(X,Y,Z)   
     [Ex,Ey,Ez]=E
-    Vout = np.zeros((p['EL_DC_1'].shape[0],p['EL_DC_1'].shape[1],p['EL_DC_1'].shape[2]))
+    Vout = np.zeros((len(X),len(Y),len(Z)))
     # build up the potential from the normal DC elctrodes
     for ii in range(ne):
-        Vout = Vout + VMULT[ii]*p['EL_DC_{}'.format(ii)]
-    Vout = Vout#-Ex*x-Ey*y-Ez*z
+        Vout = Vout + VMULT[ii]*trap['EL_DC_{}'.format(ii)].potential
+    #Vout = Vout -Ex*X-Ey*Y-Ez*Z
     # update the trapping field data structure with instance attributes
-    tf.instance.DC=Vout
-    tf.instance.RF=p.EL_RF # not needed, but may be useful notation
-    tf.instance.X=X
-    tf.instance.Y=Y
-    tf.instance.Z=Z
-    tf.instance.E=E
-    tf.instance.check=True
-    if update==True:
-        name=trap
-        print('Saving '+name+' as a data structure...')
-        output = open(name,'wb')
-        pickle.dump(tf,output)
-        output.close()
-    return tf.instance.DC
+    trap.instance.DC=Vout
+    trap.instance.RF=trap.EL_RF # not needed, but may be useful notation
+    trap.instance.X=X
+    trap.instance.Y=Y
+    trap.instance.Z=Z
+    trap.instance.E=E
+    trap.instance.check=True
+    return trap
  
 def set_voltages():
     """Provides the DC voltages for all DC electrodes to be set to using the parameters and voltage controls from analyze_trap.
@@ -791,14 +773,12 @@ def set_voltages():
     Nikos, July 2009, cleaned up October 2013
     William Python 2014""" 
     #0) set parameters
-    from project_parameters import savePath,name,multipoleControls,reg,driveFrequency,ax,az,phi,coefs,manuals
+    from project_parameters import trapFile,multipoleControls,reg,driveFrequency,ax,az,phi,coefs,manuals
     import pickle
-    trap = savePath+name+'.pkl'
-    file = open(trap,'rb')
-    tf = pickle.load(file)
-    file.close()
-    V,X,Y,Z=tf.instance.DC,tf.instance.X,tf.instance.Y,tf.instance.Z
-    tc=tf.configuration
+    with open(trapFile,'rb') as f:
+        trap = pickle.load(f)
+    V,X,Y,Z=trap.instance.DC,trap.instance.X,trap.instance.Y,trap.instance.Z
+    tc=trap.configuration
     C = tc.multipoleControl
     el = []
     #1) check if trap_knobs has been run yet, creating multipoleControl and multipoleKernel
@@ -909,7 +889,10 @@ def exact_saddle(V,X,Y,Z,dim,Z0=None):
     William Python Jan 2014"""
     #from all_functions import find_saddle,sum_of_e_field
     if dim==3:
+        print "here"
+        print find_saddle(V,X,Y,Z,3)
         [I,J,K]=find_saddle(V,X,Y,Z,3) # guess saddle point; Z0 not needed
+        print I,J,K
         r0=[X[I],Y[J],Z[K]]
         if I<2 or I>V.shape[0]-2: 
             print('exact_saddle.py: Saddle point out of bounds in radial direction.')
@@ -1208,33 +1191,22 @@ def p2d(V,x,y):
     theta=180.*theta/np.pi
     return (Af, Bf, theta)
  
-def plotN(trap,title=None,convention=None): 
+def plotN(trap,trapFull,title=None): 
     """Mesh the values of the DC voltage corresponding to the N DC electrodes of a planar trap,
     in a geometrically "correct" way.
     trap is a vector of N elements.
     Possible to add in different conventions later.
     Nikos, July 2009
     William Python 2014"""
-    from matplotlib import cm 
+    from matplotlib import cm,pyplot
     import mpl_toolkits.mplot3d.axes3d as p3
-    N=trap.shape[0]
-    n=np.int(np.floor(N/2))
-    A=np.zeros((10*n,20))
-    for i in range(int(n)): # Left electrodes.
-        A[10*(n-i-1)+1:10*(n-i),1:3]=trap[i+1]
-    A[:,5:7]=trap[0] # Left Center
-    A[:,9:11]=trap[N-1] # Central electrode.
-    A[:,13:15]=trap[0] # Right Center
-    for i in range(1,int(n+1)): # Right electrodes.
-        A[10*(n-i)+1:10*(n+1-i),17:19]=trap[i+n-1]
-    x = np.arange(A.shape[0])
-    y = np.arange(A.shape[1])
-    x,y = np.meshgrid(x,y)
-    z = A[x,y]
+    positions = []
+    for i in range(0,len(trap)):
+        positions.append(trapFull['EL_DC_{}'.format(i)].position)
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.hot, linewidth=0)
-    fig.colorbar(surf)
+    ax = fig.gca()
+    plot = ax.scatter([p[0] for p in positions],[p[1] for p in positions],500,trap,cmap=cm.hot)
+    fig.colorbar(plot)
     plt.title(title)
     return plt.show()
 
