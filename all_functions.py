@@ -108,271 +108,84 @@ def import_data():
     * The sequence for counting DC electrodes runs through the left side of the RF (bottom to top), right side of
     the RF (bottom to top), center electrodes inside of the RF (left center, then right center), and finally RF.
     *All other conventions are defined and described in project_parameters."""
-    from project_parameters import simCount,perm,dataPointsPerAxis,numElectrodes,save,debug,scale
+    from project_parameters import perm,dataPointsPerAxis,numElectrodes,save,debug,scale
     from project_parameters import baseDataName,simulationDirectory,fileName,savePath,timeNow,useDate
-    from project_parameters import fileName,savePath,position,zMin,zMax,zStep,save,debug,name,simCount,charge,mass,r0
+    from project_parameters import fileName,savePath,position,zMin,zMax,zStep,save,debug,name,charge,mass,r0
     import pickle
     # renaming for convenience
-    na, ne = dataPointsPerAxis, numElectrodes 
-    [startingSimulation,numSimulations] = simCount
-    # iterate through each simulation text file
-    for iterationNumber in range(startingSimulation,startingSimulation+numSimulations):      
-        #########################################################################################
-        #0) Check if data already exists 
-        def fileCheck(iterationNumber):
-            """Helper function to determine if there already exists imported data."""
-            try:
-                file = open(savePath+fileName+'_simulation_{}'.format(iterationNumber)+'.pkl','rb')
-                file.close()
-                if iterationNumber==numSimulations+1:
-                    return 'done'
-                return fileCheck(iterationNumber+1)
-            except IOError: # unable to open pickle because it does not exist
-                print('No pre-imported data in directory for simulation {}.'.format(iterationNumber))
-                return iterationNumber
-        iterationNumber=fileCheck(iterationNumber) # lowest iteration number that is not yet imported
-        if iterationNumber=='done':
-            return 'All files have been imported.'
-        #########################################################################################
-        # Read txt file
+    na, ne = dataPointsPerAxis, numElectrodes     
 
-        #works with import_data_HOA -smouradi 04/19
-        print('Loading trap data from Sandia...')
-        fname = (simulationDirectory+baseDataName+'.pkl')
-        print fname
-        try:
-            f = open(fname,'rb')
-        except IOError:
-            return ('No pickle file found.')
-        trap = pickle.load(f)
+    #works with import_data_HOA -smouradi 04/19
+    print('Loading trap data from Sandia...')
+    fname = (simulationDirectory+baseDataName+'.pkl')
+    print fname
+    try:
+        f = open(fname,'rb')
+    except IOError:
+        return ('No pickle file found.')
+    trap = pickle.load(f)
 
-        Xi = trap['X'] #sandia defined coordinates
-        Yi = trap['Y']
-        Zi = trap['Z']
-        #get everything into expected directions (described in project_paramters)
-        coords = [Xi,Yi,Zi]
-        X = coords[perm[0]]/scale
-        Y = coords[perm[1]]/scale
-        Z = coords[perm[2]]/scale
-        if debug.import_data:
-            print ('Printing grid vectors X,Y, and Z:')
-            print X.shape
-            print Y.shape
-            print Z.shape
+    Xi = trap['X'] #sandia defined coordinates
+    Yi = trap['Y']
+    Zi = trap['Z']
+    #get everything into expected directions (described in project_paramters)
+    coords = [Xi,Yi,Zi]
+    X = coords[perm[0]]/scale
+    Y = coords[perm[1]]/scale
+    Z = coords[perm[2]]/scale
+    if debug.import_data:
+        print ('Printing grid vectors X,Y, and Z:')
+        print X.shape
+        print Y.shape
+        print Z.shape
 
-        sim=TreeDict() # begin intermediate shorthand.
-        el = 0
-        for key in trap['electrodes']: #el refers to the electrode, +1 is to include EL_0, the RF electrode
-            Vs = trap['electrodes'][key]['V']
-            Vs = Vs.reshape(na[0],na[1],na[2])
-            Vs = np.transpose(Vs,perm)
-            electrode = TreeDict()
-            electrode.potential = Vs
-            electrode.name = trap['electrodes'][key]['name']
-            electrode.position = trap['electrodes'][key]['position']
-            sim['EL_DC_{}'.format(el)] = electrode.copy()
-            el=el+1
+    sim=TreeDict() # begin intermediate shorthand.
+    el = 0
+    for key in trap['electrodes']: #el refers to the electrode, +1 is to include EL_0, the RF electrode
+        Vs = trap['electrodes'][key]['V']
+        Vs = Vs.reshape(na[0],na[1],na[2])
+        Vs = np.transpose(Vs,perm)
+        electrode = TreeDict()
+        electrode.potential = Vs
+        electrode.name = trap['electrodes'][key]['name']
+        electrode.position = trap['electrodes'][key]['position']
+        sim['EL_DC_{}'.format(el)] = electrode.copy()
+        el=el+1
 
-        del trap
-        #4) Build the simulation data structure
-        sim.X,sim.Y,sim.Z=X,Y,Z                   # set grid vectors
-        sim.EL_RF = sim.EL_DC_0                # set RF potential field
-        sim.simulationDirectory = simulationDirectory
-        sim.baseDataName = baseDataName
-        sim.timeNow = timeNow
-        sim.fileName = fileName
-        sim.useDate = useDate
-        sim.simCount = simCount
-        sim.dataPointsPerAxis = na
-        sim.numElectrodes = ne
-        sim.savePath = savePath
-        sim.perm = perm
+    del trap
+    #4) Build the simulation data structure
+    sim.X,sim.Y,sim.Z=X,Y,Z                   # set grid vectors
+    sim.EL_RF = sim.EL_DC_0                # set RF potential field
+    sim.simulationDirectory = simulationDirectory
+    sim.baseDataName = baseDataName
+    sim.timeNow = timeNow
+    sim.fileName = fileName
+    sim.useDate = useDate
+    sim.dataPointsPerAxis = na
+    sim.numElectrodes = ne
+    sim.savePath = savePath
+    sim.perm = perm
 
-        config = sim.configuration
-        sim.configuration.position = position
-        sim.configuration.numElectrodes = ne
-        sim.configuration.charge = charge
-        sim.configuration.mass = mass
-        sim.configuration.r0 = r0
+    sim.configuration.position = position
+    sim.configuration.numElectrodes = ne
+    sim.configuration.charge = charge
+    sim.configuration.mass = mass
+    sim.configuration.r0 = r0
 
-        if debug.import_data: # Plot each electrode
-            print(plot_potential(sim.EL_RF.potential,X,Y,Z,'1D plots','RF electrode'))
-            for el in range(1,ne):  
-                electrode =  sim['EL_DC_{}'.format(el)]         
-                print(plot_potential(electrode.potential,X,Y,Z,\
-                    '1D plots','Electrode {},{} Position:{}'.format(el,electrode.name,electrode.position)))
-        #5) save the particular simulation as a pickle data structure
-        print "import data"
-        save = True
-        if save == True:
-            nameOut=savePath+name+'.pkl'
-            print ('Saving '+nameOut+' as a data structure...')
-            output = open(nameOut,'wb')
-            pickle.dump(sim,output)
-            output.close()
+    if debug.import_data: # Plot each electrode
+        print(plot_potential(sim.EL_RF.potential,X,Y,Z,'1D plots','RF electrode'))
+        for el in range(1,ne):  
+            electrode =  sim['EL_DC_{}'.format(el)]         
+            print(plot_potential(electrode.potential,X,Y,Z,\
+                '1D plots','Electrode {},{} Position:{}'.format(el,electrode.name,electrode.position)))
+
+    #5) save the particular simulation as a pickle data structure
+    nameOut=savePath+name+'.pkl'
+    print ('Saving '+nameOut+' as a data structure...')
+    output = open(nameOut,'wb')
+    pickle.dump(sim,output)
+    output.close()
     return 'Import complete.'
-     
-def get_trap():
-    """Originally getthedata.
-    Create a new "trap" structure centered around the given position and composed of portions of the adjacent simulations.
-    The electrodes are ordered as E[1]=E[DC_1],...,E[max-1]=E[center],E[max]=E[RF].
-    Connect together a line of cubic matrices to describe a rectangular prism of data.
-    The consecutive data structures must have overlaping first and last points. 
-    Used to create field configuration attributes on the trap that will be used by lower order functions. 
-    These are now imported and saved wherever they are first used through the remaining higher order functions.
-    Recall that the grid vectors X,Y,Z are still attributes of potentials now and will become attributes of instance later.
-    Created by Nikos 2009, cleaned 26-05-2013, 10-23-2013.
-    Converted to Python and revised by William Jan 2014"""
-    #0) define parameters
-    from project_parameters import fileName,savePath,position,zMin,zMax,zStep,save,debug,name,simCount,charge,mass,r0
-    import pickle
-    tf=TreeDict() # begin shorthand for trap data structure
-    pathName = savePath+fileName+'_simulation_'
-    #1) Check if the number of overlapping data structures is the same as the number of simulations.
-    # simCount was imported again (after import_data used it) because it is used as a check for user input consistency
-    numSim=1#int(np.ceil(float(zMax-zMin)/zStep-1e-9))
-    print numSim
-    if numSim!=simCount[1]:
-        print numSim,simCount,float(zMax-zMin)/zStep
-        raise Exception('Inconsistency in simulation number. Check project_parameters for consistency.')
-    if numSim==1:
-        print('If there is only one simulation, use that one. Same debug as import_data.')
-        # This is redundant with the final save but is called here to avoid errors being raised with zLim below.
-        file = open(pathName+str(simCount[0])+'.pkl','rb')
-        tf.potentials = pickle.load(file)
-        file.close()
-        potential=tf.potentials    # base potential to write over
-        ne=potential.numElectrodes
-        print "ne"
-        print ne
-        trap = tf
-        c=trap.configuration
-        c.position = position 
-        c.numElectrodes = ne # also listed in systemInformation
-        c.charge = charge
-        c.mass = mass
-        c.r0 = r0
-        trap.configuration=c
-        if save:
-            import pickle
-            name=savePath+name+'.pkl'
-            print('Saving '+name+' as a data structure...')
-            output = open(name,'wb')
-            pickle.dump(trap,output)
-            output.close()
-        return 'Constructed trap from single file.'
-    #2) Define a background for files. 
-    zLim=np.arange(zMin,zMax,zStep) 
-    #3) helper function to find z-position of ion
-    def find_index(list,position): # Find which simulation position is in based on z-axis values.
-        """Finds index of first element of list higher than a given position. Lowest index is 1, not 0"""
-        # replaces Matlab Code: I=find(zLim>position,1,'first')-1
-        i=0
-        for elem in list:
-            if elem>position:
-                index=i
-                return index
-            else: 
-                index=0
-            i += 1
-        return index 
-    index=find_index(zLim,position)
-    if (index<1) or (index>simCount[1]):
-        raise Exception('Invalid ion position. Quitting.')
-    #4) determine which side of the simulation the ion is on
-    pre_sign=2*position-zLim[index-1]-zLim[index] # determines 
-    if pre_sign==0: # position is exactly halfway between simulations
-        sign=-1 # could be 1 as well
-    else:
-        sign=int(pre_sign/abs(pre_sign))  
-    #5) If position is in the first half of the first grid, just use that grid.
-    if (index==1) and (sign==-1): 
-        print('If position is in the first or last grid, just use that grid.')
-        file = open(pathName+'1.pkl','rb')
-        tf.potentials = pickle.load(file)
-        file.close()
-    #6) If the ion is in the second half of the last grid, just use the last grid. 
-    elif (index==simCount[1]) and (sign==1): 
-        print('If the ion is in the second half of the last grid, just use the last grid.')
-        file = open(pathName+'{}.pkl'.format(numSimulations),'rb')
-        tf.potentials = pickle.load(file)
-        file.close()
-    #7) Somewhere in between. Build a new set of electrode potentials centered on the position.
-    else:
-        print('Somewhere in between. Build a new set of electrode potentials centered on the position.')
-        #a) open data structure
-        file = open(pathName+'{}.pkl'.format(index),'rb')
-        tf.potentials = pickle.load(file)
-        file.close()
-        lower=position-zStep/2 # lower bound z value 
-        upper=position+zStep/2 # upper bound z value
-        shift=int(pre_sign)    # index to start from in left sim and end on in right sim, how many idices the indexing shifts right by
-        if shift < 0:
-            index -= 1
-            shift = abs(shift)
-        #b) open left sim
-        file1 = open(pathName+'{}.pkl'.format(index),'rb')
-        left = pickle.load(file1)
-        file1.close()
-        #c) open right sim
-        file2 = open(pathName+'{}.pkl'.format(index+1),'rb')
-        right = pickle.load(file2)
-        file.close()
-        #d) build bases
-        cube=tf.potentials.EL_DC_1 # arbitrary electrode; assume each is cube of same length
-        w=len(cube[0,0,:])         # number of elements in each cube; width 
-        potential=tf.potentials    # base potential to write over
-        Z=potential.Z              # arbitrary axis with correct length to build new grid vector
-        ne=potential.numElectrodes
-        #e) build up trap
-        for el in range(ne): # includes the RF
-            right_index,left_index,z_index=w-shift,0,0
-            temp=np.zeros((w,w,w)) # placeholder that becomes each new electrode
-            left_el=left['EL_DC_{}'.format(el)]
-            right_el=right['EL_DC_{}'.format(el)]
-            for z in range(shift-1,w): # build up the left side
-                temp[:,:,left_index]=left_el[:,:,z]
-                Z[z_index] = left.Z[z]
-                z_index += 1
-                left_index += 1
-            z_index -= 1 # counters double-counting of overlapping center point
-            for z in range(shift): # build up the right side; ub to include final point
-                temp[:,:,right_index]=right_el[:,:,z]
-                Z[z_index] = right.Z[z]
-                z_index += 1
-                right_index+=1
-            potential.Z = Z
-            potential['EL_DC_{}'.format(el)]=temp
-        tf.potentials = potential
-    #8) assign configuration variables to trap; originally trapConfiguration
-    trap = tf
-    c=trap.configuration
-    c.position = position 
-    c.numElectrodes = ne # also listed in systemInformation
-    c.charge = charge
-    c.mass = mass
-    c.r0 = r0
-    trap.configuration=c
-    #9) check if field generated successfully
-    if debug.get_trap:
-        sim = tf.potentials
-        X,Y,Z = sim.X,sim.Y,sim.Z # grid vectors  
-        plt.plot(Z,np.arange(len(Z)))
-        plt.title('get_trap: contnuous straight line if successful')
-        plt.show()  
-        sim = tf.potentials
-        print(plot_potential(sim.EL_RF,X,Y,Z,'2D plots','Debug: RF electrode'))
-        for el in range(1,ne):               
-            print(plot_potential(sim['EL_DC_{}'.format(el)],X,Y,Z,'1D plots','Debug: DC electrode {}'.format(el)))
-    #10) save new data structure as a pickle  
-    if save:
-        import pickle
-        name=savePath+name+'.pkl'
-        print('Saving '+name+' as a data structure...')
-        output = open(name,'wb')
-        pickle.dump(trap,output)
-        output.close()
-    return 'Constructed trap.'
 
 def expand_field():
     """Originally regenthedata. Regenerates the potential data for all electrodes using multipole expansion to given order.
@@ -432,7 +245,8 @@ def expand_field():
         plot_potential(tc.EL_RF,X,Y,Z,'1D plots','EL_RF','V (Volt)',[Irf,Jrf,Krf])
     #2) Expand the RF about its saddle point at the trapping position and save the quadrupole components.
     print('Determining RF saddle')
-    [Xrf,Yrf,Zrf] = exact_saddle(tc.EL_RF,X,Y,Z,2,position) 
+    print exact_saddle(tc.EL_RF,X,Y,Z,2,position) 
+    [Xrf,Yrf,Zrf] = exact_saddle(tc.EL_RF,X,Y,Z,2,position)
     [Irf,Jrf,Krf] = find_saddle(tc.EL_RF,X,Y,Z,2,position) 
     print('Building DC Basis')
     dcbasis,dcscale = spher_harm_bas(Xrf+Xcorrection,Yrf+Ycorrection,Zrf,X,Y,Z,int(order[0]))
@@ -927,12 +741,13 @@ def exact_saddle(V,X,Y,Z,dim,Z0=None):
         v2=V[:,:,K] # potential to right (actually right at estimate; K+1 to be actually to right)
         V2=v1+(v2-v1)*(Z0-Z[K-1])/(Z[K]-Z[K-1]) # averaged potential around given coordinate
         [I,J,K0]=find_saddle(V,X,Y,Z,2,Z0) 
+        print I,J,K0
         r0=X[I],Y[J]
         print 1
         if (I<2 or I>V.shape[0]-2): 
             print('exact_saddle.py: Saddle point out of bounds in radial direction.\n')
             return r0
-        if (J<2 or J>V.shape[1]-2):
+        if (J<2 or J>V.shape[1]-1):
             print('exact_saddle.py: Saddle point out of bounds in vertical direction.\n')
             return r0
         if V.shape[0]>100:

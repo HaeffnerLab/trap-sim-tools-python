@@ -16,7 +16,7 @@ CCT = 0    # for testing with CCT trap
 fourth = 0 # for testing synthetic data
 save  = 1  # saves data to python pickle
 debug = TreeDict()
-debug.import_data = 0  # displays potential of every electrode for every simulation
+debug.import_data = 1  # displays potential of every electrode for every simulation
 debug.get_trap = 0     # displays the newly connected electrode potentials, unless there was only one simulation
 debug.expand_field = 0 # displays the first 3 orders of multipole coefficient values
 debug.trap_knobs = 0   # displays plots of multipole controls
@@ -33,16 +33,15 @@ trapType = 'HOA'
 #simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
 #baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
 simulationDirectory = 'HOA_trap_v1/'
-baseDataName = 'DAConly'
-projectName = 'HOA_v1' # arbitrarily named by user
+baseDataName = 'CENTRALonly'
+projectName = 'HOA_v1_central' # arbitrarily named by user
 useDate = 1 # determine if simulation files are saved with our without date in name  
 timeNow = datetime.datetime.now().date() # the present date and time 
 fileName = projectName+'_'+str(timeNow)  # optional addition to name to create data structures with otherwise same name
 if not useDate:
     fileName = projectName
-simCount = [0,1]            # index of initial simulation and number of simulations; old nStart and nMatTot
 dataPointsPerAxis = [941,13,15]      # old NUM_AXIS 5, the number of data points along each axis of the cubic electrode potential
-numElectrodes = 29          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
+numElectrodes = 5          # old NUM_ELECTRODES, later nonGroundElectrodes, includes the first DC that is really RF
 #savePath = 'C:\\Python27\\trap_simulation_software\\data\\' # directory to save data at
 savePath = 'HOA_trap_v1/'
 scale = 1. # based on BEM-solver grid units; we want mm internally, so if BEM is in microns, put 1000. (decimal for 2.7) here and grid vectors will be rescaled
@@ -63,7 +62,7 @@ zMin = -2.3085/scale      # lowest value along the rectangular axis
 zMax = 2.3085/scale    # highest value along the rectangular axis
 zStep = 0.005/scale   # range of each simulation
 r0 = 1              # scaling value, nearly always one
-name = 'HOA_DAC' # name of final, composite, single-simulation data structure; may also be string of choice              
+name = 'HOA_DAC_CENTRAL' # name of final, composite, single-simulation data structure; may also be string of choice              
 trap = savePath+name+'.pkl'
 
 #################################################################################
