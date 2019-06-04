@@ -6,95 +6,6 @@ from treedict import TreeDict
 import all_functions
 
 # Primary Functions 
-def test_fourth():
-    """Construct a text files representing BEM-solver trap simulations.
-    This creates 8 electrodes, covering RF, constant, E fields, z**2, and z**4 multipoles."""
-    from project_parameters import simulationDirectory,debug
-    low,high = -5,6 # defines data with i,j,k=(-2,-1,0,1,2), symmetric for saddle point at origin
-    electrode_count = 8 # number of DC electrodes, including the one equivalent to the RF
-    axis_length = high-low # number of points along each axis
-    electrode_size = axis_length**3 # points per electrode
-    e = electrode_size
-    total = electrode_count*electrode_size # the length of each simulation data structure
-    data = np.zeros((4,total)) # 4 would be 7 instead if we had electric field data
-    elem = 0 # initialize the count of data points
-    fp = np.sqrt(1/(4*np.pi))
-    for i in range(low,high): 
-        for j in range(low,high):
-            for k in range(low,high):
-                r = np.sqrt(i**2+j**2+k**2)
-                data[:,elem]      = [i,j,k,fp*np.sqrt(15)*0.5*(i**2-j**2)] # DC_0 aka RF
-                data[:,elem+e]    = [i,j,k,fp] # DC_1, appears to be the same for fp=1
-                data[:,elem+2*e]  = [i,j,k,fp*np.sqrt(3)*i] # DC_2
-                data[:,elem+3*e]  = [i,j,k,fp*np.sqrt(3)*j] # DC_3
-                data[:,elem+4*e]  = [i,j,k,fp*np.sqrt(3)*k] # DC_4
-                data[:,elem+5*e]  = [i,j,k,fp*np.sqrt(5)*(k**2-0.5*(i**2+j**2))] # DC_5
-                data[:,elem+6*e]  = [i,j,k,fp*np.sqrt(7)*(0.5*k*(2*k**2-3*i**2-3*j**2))] # DC_6
-                data[:,elem+7*e]  = [i,j,k,fp*np.sqrt(9)*(35*k**4-30*(k*r)**2+3*r**4)/8] # DC_7
-                elem += 1
-        np.savetxt('{0}fourth1.txt'.format(simulationDirectory),data.T,delimiter=',')
-    return 'test fourth constructed'
-
-def test_text():
-    """Construct a pair of text files representing BEM-solver trap simulations.
-    This makes the primary synthetic data structure for testing."""
-    from project_parameters import simulationDirectory,debug
-    low,high = -2,3 # defines data with i,j,k=(-2,-1,0,1,2), symmetric for saddle point at origin
-    electrode_count = 14 # number of DC electrodes, including the one equivalent to the RF
-    if debug.calibrate:
-        electrode_count= 9
-    axis_length = high-low # number of points along each axis
-    electrode_size = axis_length**3 # points per electrode
-    e = electrode_size
-    total = electrode_count*electrode_size # the length of each simulation data structure
-    for sim in range(1,3): # construct 2 simulations 
-        data = np.zeros((4,total)) # 4 would be 7 instead if we had electric field data
-        elem = 0 # initialize the count of data points
-        for i in range(low,high): 
-            for j in range(low,high):
-                if sim == 1:
-                    zlow,zhigh = -4,1
-                if sim == 2:
-                    zlow,zhigh = 0,5
-                for k in range(zlow,zhigh):
-                    # there is no DC_0 and the final DC is also the RF
-                    Ex,Ey,Ez = i,j,k
-                    #Ex,Ey,Ez = i,-k,j
-                    U1,U2,U3,U4,U5 = 0.5*(i**2-j**2),0.5*(2*k**2-i**2-j**2),i*j,k*j,i*k
-                    RF = U1+10**-3*(j**3-3*i**2*j)
-                    # assign data points to each electrode
-                    if debug.calibrate:
-                        data[:,elem]      = [i,j,k,RF] # DC_0 aka RF
-                        data[:,elem+e]    = [i,j,k,Ex] # DC_1
-                        data[:,elem+2*e]  = [i,j,k,Ey] # DC_2
-                        data[:,elem+3*e]  = [i,j,k,Ez] # DC_3
-                        data[:,elem+4*e]  = [i,j,k,U1] # DC_4
-                        data[:,elem+5*e]  = [i,j,k,U2] # DC_5
-                        data[:,elem+6*e]  = [i,j,k,U3] # DC_6
-                        data[:,elem+7*e]  = [i,j,k,U4] # DC_7
-                        data[:,elem+8*e]  = [i,j,k,U5] # DC_8
-                            
-                    else:    
-                        data[:,elem]      = [i,j,k,RF]    # DC_0 aka RF
-                        data[:,elem+e]    = [i,j,k,Ex]    # DC_1
-                        data[:,elem+2*e]  = [i,j,k,Ey]    # DC_2
-                        data[:,elem+3*e]  = [i,j,k,Ez]    # DC_3
-                        data[:,elem+4*e]  = [i,j,k,U1+U2] # DC_4
-                        data[:,elem+5*e]  = [i,j,k,U1+U3] # DC_5
-                        data[:,elem+6*e]  = [i,j,k,U1+U4] # DC_6
-                        data[:,elem+7*e]  = [i,j,k,U1+U5] # DC_7
-                        data[:,elem+8*e]  = [i,j,k,U2+U3] # DC_8
-                        data[:,elem+9*e]  = [i,j,k,U2+U4] # DC_9
-                        data[:,elem+10*e] = [i,j,k,U2+U5] # DC_10
-                        data[:,elem+11*e] = [i,j,k,U3+U4] # DC_11
-                        data[:,elem+12*e] = [i,j,k,U3+U5] # DC_12
-                        data[:,elem+13*e] = [i,j,k,U4+U5] # DC_13
-                    elem += 1
-        if debug.calibrate:
-           np.savetxt('{0}meshless-pt{1}.txt'.format(simulationDirectory,sim),data.T,delimiter=',') 
-        else:
-            np.savetxt('{0}synthetic-pt{1}.txt'.format(simulationDirectory,sim),data.T,delimiter=',')
-    return 'test_text constructed, 2 simulations'
 
 def import_data():
     """Originally created as importd by Mike and modified by Gebhard, Oct 2010.
@@ -110,7 +21,7 @@ def import_data():
     *All other conventions are defined and described in project_parameters."""
     from project_parameters import perm,dataPointsPerAxis,numElectrodes,save,debug,scale
     from project_parameters import baseDataName,simulationDirectory,fileName,savePath,timeNow,useDate
-    from project_parameters import fileName,savePath,position,zMin,zMax,zStep,save,debug,name,charge,mass,r0
+    from project_parameters import fileName,position,zMin,zMax,zStep,name,charge,mass,r0
     import pickle
     # renaming for convenience
     na, ne = dataPointsPerAxis, numElectrodes     
