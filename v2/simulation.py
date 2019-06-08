@@ -7,15 +7,23 @@ resuls from BEMSolver simulations.
 """
 
 import numpy as np
-from expansion import spher_harm_expansion
+import expansion as e
+import pickle
 
-class simulation():
+class simulation:
 
-    def __init__(scale):
+    def __init__(self, scale):
         self.scale = scale
+        self.electrode_dxs = []
+        self.electrode_dys = []
+        self.electrode_dzs = []
+
+        self.electrode_dxs = []
+        self.electrode_dys = []
+        self.electrode_dzs = []
 
     
-    def import_data(self, path, pointsPerAxis, numElectrodes, saveFile = None):
+    def import_data(self, path, numElectrodes, na, perm, saveFile = None):
         '''
         path: file path to the BEMSolver output data
         pointsPerAxis: number of data points in each axis of the simulation grid
@@ -26,42 +34,54 @@ class simulation():
         Generate a three-dimensional array of the potential
         due to each electrode
         
-        Returns: TreeDict containing the X, Y, Z axes
-        as well as the potential grids for each electrode
+        adds to self X, Y, Z axes as well as the potential grids for each electrode
         '''
 
-        data = np.loadtxt(path, delimiter=',')
-        self.electrode_potentials = []
-        
-        # get the axis ranges out of the bemsolver data
-        X,Y,Z = [0],[0],data[0:pointsPerAxis,2]
-        for i in range(0,(pointsPerAxis)):
-            if i==0:
-                X[0]=(data[pointsPerAxis**2*i+1,0])
-                Y[0]=(data[pointsPerAxis*i+1,1])
-            else:
-                X.append(data[pointsPerAxis**2*i+1,0])
-                Y.append(data[pointsPerAxis*i+1,1])
-        X,Y = np.array(X).T,np.array(Y).T
-        XY = np.vstack((X,Y))
-        coord=np.vstack((XY,Z))
-        coord=coord.T
-        X,Y,Z = coord[:,0],coord[:,1],coord[:,2]
-        self.X, self.Y, self.Z = X, Y, Z
+        try:
+            f = open(path,'rb')
+        except IOError:
+            return ('No pickle file found.')
+        trap = pickle.load(f)
+
+        Xi = trap['X'] #sandia defined coordinates
+        Yi = trap['Y']
+        Zi = trap['Z']
+        #get everything into expected coordinates (described in project_paramters)
+        coords = [Xi,Yi,Zi]
+        X = coords[perm[0]]/self.scale
+        Y = coords[perm[1]]/self.scale
+        Z = coords[perm[2]]/self.scale
+
+        self.X, self.Y, self.Z = X,Y,Z
         self.numElectrodes = numElectrodes
 
-        # buld the 3D array of potentials for each electrode
-        for el in range(numElectrodes):
-            n = pointsPerAxis
-            self.electrode_potentials.append( np.zeros((n, n, n)) )
-            for i in range(n):
-                for j in range(n):
-                    start_index = n**3*(el) + n**2*i + n*j # start index for this column of data
-                    self.electrode_potentials[el][i,j,:] = data[start_index:start_index + n, 3]
-        if saveFile is not None:
-            fi = open(saveFile, 'wb')
-            pickle.dump(output, fi)
-            fi.close()
+        self.electrode_potentials = []
+        self.electrode_names = []
+        self.electrode_positions = []
+
+        for key in trap['electrodes']:
+            Vs = trap['electrodes'][key]['V']
+            Vs = Vs.reshape(na[0],na[1],na[2])
+            Vs = np.transpose(Vs,perm)
+
+            self.electrode_names.append(trap['electrodes'][key]['name'])
+            self.electrode_positions.append(trap['electrodes'][key]['position'])
+            self.electrode_potentials.append(Vs)
+
+        return
+
+    # def compute_gradient(self):
+
+    #     if len(self.electrode_dx) == 0 && len(self.electrode_dy) == 0 && len(self.electrode_dz) == 0:
+    #         print "gradient already computed"
+    #         return
+    #     else:    
+    #         for el in self.electrode_potentials:
+    #             grad = np.gradient(self.electrode_potentials)
+    #             self.electrode_dx.append(grad[0])
+    #             self.electrode_dy.append(grad[1])
+    #             self.electrode_dz.append(grad[2])
+    #     return
 
     def expand_potentials(self, expansion_point, order=3):
         '''
@@ -75,7 +95,7 @@ class simulation():
         returns: matrix of multipole expansions for each electrodes
         matrix[:, el] = multipole expansion vector for electrode el
         
-        Also defines the class variable self.multipole_expansions
+        Defines the class variable self.multipole_expansions
         '''
 
         N = (order + 1)**2 # number of multipoles
@@ -87,7 +107,7 @@ class simulation():
 
         for el in range(self.numElectrodes):
             potential_grid = self.electrode_potentials[el]
-            vec = spher_harm_expansion(potential_grid, expansion_point, X, Y, Z, order)
+            vec = e.spher_harm_expansion(potential_grid, expansion_point, X, Y, Z, order)
             self.multipole_expansions[:, el] = vec[0:N].T
 
         return self.multipole_expansions
@@ -118,7 +138,7 @@ class simulation():
             vec = np.zeros(N)
             for el in s:
                 vec += self.multipole_expansions[:, el]
-            [M_shorted[:, el] = vec for el in s]
+            [M_shorted[:, el]] = [vec for el in s]
 
         # multipole expansion matrix after accounting for shorted electrodes
         # and uncontrolled electrodes
@@ -140,5 +160,73 @@ class simulation():
         multipoles = np.zeros((self.expansion_order+1)**2)
         for k in controlled_multipoles:
             multipoles[k] = 1
+    
+from matplotlib import pyplot as plt
+path = '../HOA_trap_v1/DAConly.pkl'
+na = [941,13,15]
+ne = 29
+perm = [1,2,0]
+position = [0,0,0]
 
-        
+s = simulation(1)
+s.import_data(path,ne,na,perm)
+
+s.expand_potentials(position,2)
+
+Nmulti = len(s.multipole_expansions)
+Nelec = len(s.multipole_expansions[0])
+
+# #plotting potentials
+# fig,ax = plt.subplots(1,1)
+# for n in range(Nelec):
+#    if s.electrode_names[n] != "RF":
+#        ax.plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
+# ax.legend()
+# plt.show
+
+#checking spherical harmonic basis
+Yj1, rnorm1 = e.spher_harm_basis(position, s.X, s.Y, s.Z, 2)
+Yj2, rnorm2 = e.spher_harm_basis_v2(position, s.X, s.Y, s.Z, 2)
+Yj3, rnorm2 = e.spher_harm_basis_v1a(position, s.X, s.Y, s.Z, 2)
+
+x, y, z = np.meshgrid(s.X,s.Y,s.Z)
+x, y, z = np.ravel(x,order='F'), np.ravel(y,order='F'), np.ravel(z,order='F')
+
+fig,ax = plt.subplots(9,3)
+
+for n in range(9):
+    Y3 = Yj3[:,n].reshape(na[1],na[2],na[0])
+    a = ax[n][0].imshow(Y3[:,6,460:480])
+    b = ax[n][1].imshow(Y3[7,:,460:480])
+    c = ax[n][2].imshow(Y3[:,:,470])
+    fig.colorbar(a,ax=ax[n][0])
+    fig.colorbar(b,ax=ax[n][1])
+    fig.colorbar(b,ax=ax[n][2])
+
+plt.show()
+
+
+# plotting multipole coefficients 
+fig,ax = plt.subplots(6,1)
+for n in range(Nelec):
+    if (s.electrode_names[n] in ['Q19','Q20']):
+        ax[0].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+    if (s.electrode_names[n] in ['Q21','Q22']):
+        ax[1].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+    if (s.electrode_names[n] in ['Q23','Q24']):
+        ax[2].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+    if (s.electrode_names[n] in ['Q17','Q18']):
+        ax[3].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+    if (s.electrode_names[n] in ['Q15','Q16']):
+        ax[4].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+    if (s.electrode_names[n] in ['Q39','Q40']):
+        ax[5].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+
+ax[0].legend()
+ax[1].legend()
+ax[2].legend()
+ax[3].legend()
+ax[4].legend()
+ax[5].legend()
+
+plt.show()

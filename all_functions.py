@@ -8,20 +8,11 @@ import all_functions
 # Primary Functions 
 
 def import_data():
-    """Originally created as importd by Mike and modified by Gebhard, Oct 2010.
-    Conventions redefined, cleaned up, and combined with new developments by Nikos, Jun 2013.
-    Converted to Python and simplified by William, Jan 2014.
-    Imports simulation data stored in text files, interpreting three coordinates, a scalar potential value, 
-    and (optionally) three electric field components. It outputs a Python "pickle" for each text file.
-    Each pickle contains attributes: potentials (with an attribute for each electrode), grid vectors (X,Y,Z), 
-    and system Information from project_parameters.     
-    * All the electrodes are initially assumed to be DC.
-    * The sequence for counting DC electrodes runs through the left side of the RF (bottom to top), right side of
-    the RF (bottom to top), center electrodes inside of the RF (left center, then right center), and finally RF.
-    *All other conventions are defined and described in project_parameters."""
-    from project_parameters import perm,dataPointsPerAxis,numElectrodes,save,debug,scale
-    from project_parameters import baseDataName,simulationDirectory,fileName,savePath,timeNow,useDate
-    from project_parameters import fileName,position,zMin,zMax,zStep,name,charge,mass,r0
+    """Changed significantly by sara (2019) to take work with import_data_HOA python notebook which allows 
+    the user to pick particular electrodes from the HOA trap .bin files."""
+    from project_parameters import perm,dataPointsPerAxis,numElectrodes,debug,scale
+    from project_parameters import baseDataName,simulationDirectory,savePath,name
+    from project_parameters import position,zMin,zMax,zStep,name,charge,mass,r0
     import pickle
     # renaming for convenience
     na, ne = dataPointsPerAxis, numElectrodes     
@@ -33,26 +24,26 @@ def import_data():
     try:
         f = open(fname,'rb')
     except IOError:
-        return ('No pickle file found.')
+        return ('No pickle file foudn.')
     trap = pickle.load(f)
 
     Xi = trap['X'] #sandia defined coordinates
     Yi = trap['Y']
     Zi = trap['Z']
-    #get everything into expected directions (described in project_paramters)
+    #get everything into expected coordinates (described in project_paramters)
     coords = [Xi,Yi,Zi]
     X = coords[perm[0]]/scale
     Y = coords[perm[1]]/scale
     Z = coords[perm[2]]/scale
     if debug.import_data:
-        print ('Printing grid vectors X,Y, and Z:')
+        print ('size of X,Y, and Z:')
         print X.shape
         print Y.shape
         print Z.shape
 
-    sim=TreeDict() # begin intermediate shorthand.
+    sim=TreeDict()
     el = 0
-    for key in trap['electrodes']: #el refers to the electrode, +1 is to include EL_0, the RF electrode
+    for key in trap['electrodes']:
         Vs = trap['electrodes'][key]['V']
         Vs = Vs.reshape(na[0],na[1],na[2])
         Vs = np.transpose(Vs,perm)
@@ -60,33 +51,30 @@ def import_data():
         electrode.potential = Vs
         electrode.name = trap['electrodes'][key]['name']
         electrode.position = trap['electrodes'][key]['position']
+        if electrode.name == 'RF':
+            sim['EL_RF'.format(el)] = electrode.copy()
         sim['EL_DC_{}'.format(el)] = electrode.copy()
         el=el+1
 
     del trap
     #4) Build the simulation data structure
     sim.X,sim.Y,sim.Z=X,Y,Z                   # set grid vectors
-    sim.EL_RF = sim.EL_DC_0                # set RF potential field
     sim.simulationDirectory = simulationDirectory
     sim.baseDataName = baseDataName
-    sim.timeNow = timeNow
-    sim.fileName = fileName
-    sim.useDate = useDate
     sim.dataPointsPerAxis = na
     sim.numElectrodes = ne
     sim.savePath = savePath
     sim.perm = perm
 
     sim.configuration.position = position
-    sim.configuration.numElectrodes = ne
     sim.configuration.charge = charge
     sim.configuration.mass = mass
     sim.configuration.r0 = r0
 
     if debug.import_data: # Plot each electrode
         print(plot_potential(sim.EL_RF.potential,X,Y,Z,'1D plots','RF electrode'))
-        for el in range(1,ne):  
-            electrode =  sim['EL_DC_{}'.format(el)]         
+        for el in range(0,ne):  
+            electrode = sim['EL_DC_{}'.format(el)]         
             print(plot_potential(electrode.potential,X,Y,Z,\
                 '1D plots','Electrode {},{} Position:{}'.format(el,electrode.name,electrode.position)))
 
@@ -101,33 +89,29 @@ def import_data():
 def expand_field():
     """Originally regenthedata. Regenerates the potential data for all electrodes using multipole expansion to given order.
     Also returns a attribute of trap, configuration.multipoleCoefficients, which contains the multipole coefficients for all electrodes.
-    The electrodes are ordered as E[1], ..., E[NUM_DC]=E[RF] though the final electrode is not included in the attribute.
-    6/19/14: RF is not 0, not NUM_DC
-    (if center and RF are used)
           ( multipoles    electrodes ->       )
           (     |                             )
     M =   (     V                             )
           (                                   )
     Multipole coefficients only up to order 8 are kept, but the coefficients are calculated up to order L.
-    trap is the path to a data structure that contains an instance with the following properties
-    .DC is a 3D matrix containing an electric potential and must solve Laplace's equation
-    .X,.Y,.Z are the vectors that define the grid in three directions
-    Xcorrection, Ycorrection: optional correction offsets from the RF saddle point,
-                              in case that was wrong by some known offset
-    position: the axial position where the ion sits
+    savePath, name point to the .pkl file saved by import_data
     Written by Nikos, Jun 2009, cleaned up 26-05-2013, 10-23-2013
-    Converted to by Python by William, Jan 2014"""
-    #0) establish parameters and open updated trap with including instance configuration attributes
-    from project_parameters import savePath,name,Xcorrection,Ycorrection,regenOrder,save,debug,E,pureMultipoles
-    #from all_functions import spher_harm_bas,spher_harm_exp,spher_harm_cmp,spher_harm_qlt,find_saddle,exact_saddle,plot_potential,dc_potential
+    Converted to by Python by William, Jan 2014
+    Edited by Sara 2019 to work better with HOA"""
+
+    #0) establish parameters and open trap structure
+    from project_parameters import savePath,name,Xcorrection,Ycorrection,regenOrder,E,debug
     import pickle
+
     trapFile = savePath + name + '.pkl'
     with open(trapFile,'rb') as f:
         trap = pickle.load(f)
-    ne=trap.configuration.numElectrodes
+    ne=trap.numElectrodes
+
     if not debug.expand_field:
         if trap.configuration.expand_field==True:
             return 'Field is already expanded.'
+
     VMULT= np.ones((ne,1)) # analogous to dcVolatages
     trap = dc_potential(trap,VMULT,E,True) # run dc_potential to add a instance structure to the full trap structure
     V,X,Y,Z=trap.instance.DC,trap.instance.X,trap.instance.Y,trap.instance.Z
@@ -142,6 +126,7 @@ def expand_field():
     order = np.zeros(ne)
     order[:]=int(regenOrder)
     N=(regenOrder+1)**2 
+
     #1) Expand the RF about the grid center, regenerate data from the expansion.
     print('Building RF potential')
     Irf,Jrf,Krf = int(np.floor(len(X)/2)),int(np.floor(len(Y)/2)),int(np.floor(len(Z)/2))
@@ -188,11 +173,11 @@ def expand_field():
     #4) Define the multipole Coefficients
     tc.multipoleCoefficients = Mt
     print('expand_field: Size of the multipole coefficient matrix is {}'.format(Mt.shape))
-    if save: 
-        tc.expand_field=True
-    if save: 
-        with open(trapFile,'wb') as f:
-            pickle.dump(trap,f)
+
+    tc.expand_field=True
+    with open(trapFile,'wb') as f:
+        pickle.dump(trap,f)
+
     return 'expand_field: ended successfully.'
  
 def trap_knobs():
@@ -220,7 +205,7 @@ def trap_knobs():
     #1) redefine parameters with shorthand and run sanity checks
     totE = len(electrodes) # numTotalElectrodes
     totM = len(multipoles) # numTotalMultipoles
-    assert totE == trap.configuration.numElectrodes # Make sure that the total number of electrodes includes the RF.
+    assert totE == trap.numElectrodes # Make sure that the total number of electrodes includes the RF.
     tc = trap.configuration
     mc = tc.multipoleCoefficients # this is the original, maximum-length multipole coefficients matrix (multipoles,electrodes)
     for row in range(totM):
@@ -460,7 +445,7 @@ print('Referencing all_functions...')
 def dc_potential(trap,VMULT,E,update=None):
     """ Calculates the dc potential given the applied voltages and the stray field.
     Creates a third attribute of trap, called instance, a 3D matrix of potential values
-    trap: file path and name, including '.pkl'
+    trap: trap instance
     VMULT: electrode voltages determined by the multipole control algorithm
     VMAN: electrode voltages determined by manual user control 
           e.g. VMAN  = [0,0,-2.,0,...] applies -2 V to electrode 3
@@ -471,7 +456,7 @@ def dc_potential(trap,VMULT,E,update=None):
     update: name to save new file as; typically the same as the name used for get_trap
     Nikos, cleaned up June 2013
     William, converted to Python Jan 2014"""
-    ne=trap.configuration.numElectrodes
+    ne=trap.numElectrodes
     X,Y,Z=trap.X,trap.Y,trap.Z # grid vectors
     x,y,z=np.meshgrid(X,Y,Z)   
     [Ex,Ey,Ez]=E
@@ -479,7 +464,7 @@ def dc_potential(trap,VMULT,E,update=None):
     # build up the potential from the normal DC elctrodes
     for ii in range(ne):
         Vout = Vout + VMULT[ii]*trap['EL_DC_{}'.format(ii)].potential
-    #Vout = Vout -Ex*X-Ey*Y-Ez*Z
+    #Vout = Vout -Ex*X-Ey*Y-Ez*Z  ### sara didn't try to get this to work.
     # update the trapping field data structure with instance attributes
     trap.instance.DC=Vout
     trap.instance.RF=trap.EL_RF # not needed, but may be useful notation
@@ -498,7 +483,7 @@ def set_voltages():
     Nikos, July 2009, cleaned up October 2013
     William Python 2014""" 
     #0) set parameters
-    from project_parameters import trapFile,multipoleControls,reg,driveFrequency,ax,az,phi,coefs,manuals
+    from project_parameters import trapFile,multipoleControls,reg,driveFrequency,ax,az,phi,coefs
     import pickle
     with open(trapFile,'rb') as f:
         trap = pickle.load(f)
@@ -534,10 +519,6 @@ def set_voltages():
         Lambda = np.linalg.lstsq(tc.multipoleKernel,C)
         Lambda=Lambda[0]
         el = el-(np.dot(tc.multipoleKernel,Lambda))
-    #4) Apply manual electrode values 
-    for index in range(len(el)):
-        if manuals[index]:
-            el[index] = manuals[index] 
     return el 
 
 def pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf):
@@ -652,7 +633,6 @@ def exact_saddle(V,X,Y,Z,dim,Z0=None):
         v2=V[:,:,K] # potential to right (actually right at estimate; K+1 to be actually to right)
         V2=v1+(v2-v1)*(Z0-Z[K-1])/(Z[K]-Z[K-1]) # averaged potential around given coordinate
         [I,J,K0]=find_saddle(V,X,Y,Z,2,Z0) 
-        print I,J,K0
         r0=X[I],Y[J]
         print 1
         if (I<2 or I>V.shape[0]-2): 
@@ -936,7 +916,47 @@ def plotN(trap,trapFull,title=None):
     plt.title(title)
     return plt.show()
 
-def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
+def spher_harm_bas(Xc,Yc,Zc, X, Y, Z, order):
+    import math as mt
+    from scipy.special import lpmv,sph_harm
+    '''
+    Computes spherical harmonics, but directly by taking the real part of the spherical harmonics computed directly with scipy
+   
+    Returns: [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...], rnorm
+    where Yxx is a 1D array of the spherical harmonic evaluated on the grid
+    rnorm is a normalization factor for the spherical harmonics
+    '''
+
+    #initialize grid with expansion point (r0) at 0
+    x0 = Xc
+    y0 = Yc
+    z0 = Zc
+    x, y, z = np.meshgrid(X-x0,Y-y0,Z-z0)
+    x, y, z = np.ravel(x,order='F'), np.ravel(y,order='F'), np.ravel(z,order='F')
+    #change variables
+    r = np.sqrt(x*x+y*y+z*z)
+    r_trans = np.sqrt(x*x+y*y)
+    theta = np.arctan2(r_trans,z)
+    phi = np.arctan2(y,x)
+
+    # for now normalizing as in matlab code
+    dl = X[1]-X[0]
+    scale = np.sqrt(np.amax(r)*dl)
+    # scaling as done above
+    scale2 = np.sqrt(np.amax(r)*np.amin(r))
+
+    Yj = []
+
+    #real part of spherical harmonics
+    for l in range(0,order+1):
+        for m in range(l*-1,l+1):
+            Yj.append(sph_harm(m,l,theta,phi).real)
+
+    Yj = np.transpose(Yj)
+
+    return Yj, scale
+
+def spher_harm_bas_v1(Xc,Yc,Zc,X,Y,Z,Order):
     """Make the real spherical harmonic matrix in sequence of [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...]
     In other words: Calculate the basis vectors of the sph. harm. expansion:  """
     import math as mt

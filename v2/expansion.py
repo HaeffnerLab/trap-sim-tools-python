@@ -4,9 +4,10 @@ harmonic expansion of the potential
 '''
 import numpy as np
 import math as mt
-from scipy.special import lpmv
+from scipy.special import lpmv, sph_harm
 
-def spher_harm_bas(r0, X, Y, Z, order):
+
+def spher_harm_basis(r0, X, Y, Z, order):
     """
     Computes real spherical harmonics on a flattened grid
     about expansion point r0 = [x0, y0, z0].
@@ -15,7 +16,6 @@ def spher_harm_bas(r0, X, Y, Z, order):
     where Yxx is a 1D array of the spherical harmonic evaluated on the grid
     rnorm is a normalization factor for the spherical harmonics
      """
-
 
     # Construct variables from axes; no meshgrid as of 6/4/14; no potential as of 6/12/14
     nx,ny,nz=X.shape[0],Y.shape[0],Z.shape[0]
@@ -40,6 +40,8 @@ def spher_harm_bas(r0, X, Y, Z, order):
     for i in range(len(z)):
         theta[i] = mt.atan2(rt[i],z[i])
         phi[i] = mt.atan2(y[i],x[i])
+
+
     # Make the spherical harmonic matrix in sequence of [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...]
     Yj = np.zeros((nx*ny*nz,(order+1)**2))
     fp = np.sqrt(1/(4*np.pi))
@@ -66,6 +68,103 @@ def spher_harm_bas(r0, X, Y, Z, order):
         mc += 2*n+1
     return Yj,rnorm
 
+def spher_harm_basis_v2(r0, X, Y, Z, order):
+    '''
+    Computes spherical harmonics, 
+    but directly by taking the real part of the spherical harmonics computed directly with scipy
+   
+    Returns: [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...], rnorm
+    where Yxx is a 1D array of the spherical harmonic evaluated on the grid
+    rnorm is a normalization factor for the spherical harmonics
+    '''
+
+    #initialize grid with expansion point (r0) at 0
+    x0,y0,z0 = r0
+    y, x, z = np.meshgrid(Y-y0,X-x0,Z-z0)
+    x, y, z = np.ravel(x,order='F'), np.ravel(y,order='F'), np.ravel(z,order='F')
+    #change variables
+    r = np.sqrt(x*x+y*y+z*z)
+    r_trans = np.sqrt(x*x+y*y)
+    theta = np.arctan2(r_trans,z)
+    phi = np.arctan2(y,x)
+
+    # for now normalizing as in matlab code
+    dl = X[1]-X[0]
+    scale = np.sqrt(np.amax(r)*dl)
+    # scaling as done above
+    scale2 = np.sqrt(np.amax(r)*np.amin(r))
+
+    Yj = []
+
+    #real part of spherical harmonics
+    for l in range(0,order+1):
+        for m in range(l*-1,l+1):
+            Yj.append(sph_harm(m,l,theta,phi).real)
+
+    Yj = np.transpose(Yj)
+
+    return Yj, scale
+
+
+def legendre(n,X):
+    '''
+    like the matlab function, returns an array of all the assosciated legendre functions of degree n
+    and order m = 0,1.... n for each element in X
+    '''
+    r = []
+    for m in range(n+1):
+        r.append(lpmv(m,n,X))
+    return r
+
+def spher_harm_basis_v1a(r0, X, Y, Z, order):
+    '''
+    Computes spherical harmonics, just re-written matlab code
+   
+    Returns: [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...], rnorm
+    where Yxx is a 1D array of the spherical harmonic evaluated on the grid
+    rnorm is a normalization factor for the spherical harmonics
+    '''
+
+    #initialize grid with expansion point (r0) at 0
+    x0,y0,z0 = r0
+    
+    nx = len(X)
+    ny = len(Y)
+    nz = len(Z)
+    npts = nx*ny*nz
+
+    y, x, z = np.meshgrid(Y-y0,X-x0,Z-z0)
+    x, y, z = np.reshape(x,(npts)), np.reshape(y,(npts)), np.reshape(z,(npts))
+
+    #change variables
+    r = np.sqrt(x*x+y*y+z*z)
+    r_trans = np.sqrt(x*x+y*y)
+    theta = np.arctan2(r_trans,z)
+    phi = np.arctan2(y,x)
+
+    # for now normalizing as in matlab code
+    dl = X[1]-X[0]
+    scale = np.sqrt(np.amax(r)*dl)
+    rs = r/scale
+
+    Q = []
+    Q.append(np.ones(len(x)))
+
+    #real part of spherical harmonics
+    for n in range(1,order+1):
+        p = legendre(n,np.cos(theta))
+        c = (rs**n)*p[0]
+        Q.append(c)
+        for m in range(2,n+2):
+            c = (rs**n)*p[m-1]*np.cos((m-1)*phi)
+            Q.append(c)
+            cn = (rs**n)*p[m-1]*np.sin((m-1)*phi)
+            Q.append(c)
+
+    Q = np.transpose(Q)
+
+    return Q, scale
+
 def spher_harm_expansion(potential_grid, r0, X, Y, Z, order):
     '''
     Compute the least-squares solution for the spherical harmonic expansion on potential_grid.
@@ -77,19 +176,25 @@ def spher_harm_expansion(potential_grid, r0, X, Y, Z, order):
     '''
     # Convert the 3D DC potential into 1D array.
     # Numerically invert, here the actual expansion takes place and we obtain the expansion coefficients M_{j}.
-    W=np.ravel(potential_grid,order='F') # 1D array of all potential values
+
+    nx = len(X)
+    ny = len(Y)
+    nz = len(Z)
+    npts = nx*ny*nz
+
+    W=np.reshape(potential_grid,npts) # 1D array of all potential values
     W=np.array([W]).T # make into column array
 
-    Yj, rnorm = spher_harm_basis(r0, X, Y, Z, order)
+    Yj, rnorm = spher_harm_basis_v1a(r0,X,Y,Z,order)
+    #Yj, rnorm = spher_harm_basis_v2(r0, X, Y, Z, order)
 
-    Mj=np.linalg.lstsq(Yj,W)
+    Mj=np.linalg.lstsq(Yj,W,rcond=None)
     Mj=Mj[0] # array of coefficients
 
     # rescale to original units
     i = 0
-    order = int(np.sqrt(len(Mj))-1)
     for n in range(1,order+1):
-        for m in range(2*n+1):
+        for m in range(1,2*n+2):
             i += 1
             Mj[i] = Mj[i]/(rnorm**n)
     return Mj
