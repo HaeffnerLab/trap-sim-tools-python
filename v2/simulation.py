@@ -75,6 +75,8 @@ class simulation:
             Vs = Vs[:,:,I_min:I_max]
 
             self.electrode_names.append(trap['electrodes'][key]['name'])
+            if self.electrode_names.append(trap['electrodes'][key]['name']) == 'RF':
+                self.RF_potential = Vs
             self.electrode_positions.append(trap['electrodes'][key]['position'])
             self.electrode_potentials.append(Vs)
 
@@ -110,7 +112,7 @@ class simulation:
                 self.electrode_multipole.append(e.compute_multipoles(g,h))
         return
 
-    def expand_potentials_spherHarm(self, expansion_point, order=2):
+    def expand_potentials_spherHarm(self):
         '''
         Computes a multipole expansion of every electrode around the specified value expansion_point to the specified order.
         Defines the class variables:
@@ -122,14 +124,11 @@ class simulation:
         N = (order + 1)**2 # number of multipoles
 
         self.multipole_expansions = np.zeros((N, self.numElectrodes))
-        self.expansion_order = order
         self.electrode_potentials_regenerated = np.zeros(np.array(self.electrode_potentials).shape)
 
         X, Y, Z = self.X, self.Y, self.Z
 
         for el in range(self.numElectrodes):
-            multipoleDCVoltages = np.zeros(self.numElectrodes)
-            multipoleDCVoltages[el] = 1
 
             #multipole expansion
             potential_grid = self.electrode_potentials[el]
@@ -139,6 +138,28 @@ class simulation:
             #regenerated field
             Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
             self.electrode_potentials_regenerated[el] = Vregen.reshape([self.nx,self.ny,self.nz])
+
+            if self.electrode_names[el] == 'RF':
+                self.RF_multipole_expansion = Mj[0:N].T
+                self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
+
+        return
+
+    def rf_saddle (self,expansion_point,order):
+        ## finds the rf_saddle point near the desired expansion point and updates the expansion_position
+
+        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, expansion_point, X, Y, Z, order)
+        self.RF_multipole_expansion = Mj[0:N].T
+
+        #regenerated field
+        Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
+        self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
+
+        [Xrf,Yrf,Zrf] = exact_saddle(self.RF_potential,X,Y,Z,self.expansion_order,self.expansion_point)
+        [Irf,Jrf,Krf] = find_saddle(self.RF_potential,X,Y,Z,self.expansion_order,self.expansion_point)
+
+        self.expansion_point = [Xrf,Yrf,Zrf]
+        self.expansion_order = order
 
         return
 
