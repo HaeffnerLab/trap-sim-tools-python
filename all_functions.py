@@ -4,6 +4,7 @@ import scipy.optimize as spo
 import matplotlib.pyplot as plt
 from treedict import TreeDict
 import all_functions
+from scipy.special import lpmv
 
 # Primary Functions 
 
@@ -916,11 +917,19 @@ def plotN(trap,trapFull,title=None):
     plt.title(title)
     return plt.show()
 
-def spher_harm_bas(Xc,Yc,Zc, X, Y, Z, order):
-    import math as mt
-    from scipy.special import lpmv,sph_harm
+def legendre(n,X):
     '''
-    Computes spherical harmonics, but directly by taking the real part of the spherical harmonics computed directly with scipy
+    like the matlab function, returns an array of all the assosciated legendre functions of degree n
+    and order m = 0,1.... n for each element in X
+    '''
+    r = []
+    for m in range(n+1):
+        r.append(lpmv(m,n,X))
+    return r
+
+def spher_harm_bas_v2(x0,y0,z0, X, Y, Z, order):
+    '''
+    Computes spherical harmonics, just re-written matlab code
    
     Returns: [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...], rnorm
     where Yxx is a 1D array of the spherical harmonic evaluated on the grid
@@ -928,11 +937,15 @@ def spher_harm_bas(Xc,Yc,Zc, X, Y, Z, order):
     '''
 
     #initialize grid with expansion point (r0) at 0
-    x0 = Xc
-    y0 = Yc
-    z0 = Zc
-    x, y, z = np.meshgrid(X-x0,Y-y0,Z-z0)
-    x, y, z = np.ravel(x,order='F'), np.ravel(y,order='F'), np.ravel(z,order='F')
+    
+    nx = len(X)
+    ny = len(Y)
+    nz = len(Z)
+    npts = nx*ny*nz
+
+    y, x, z = np.meshgrid(Y-y0,X-x0,Z-z0)
+    x, y, z = np.reshape(x,npts), np.reshape(y,npts), np.reshape(z,npts)
+
     #change variables
     r = np.sqrt(x*x+y*y+z*z)
     r_trans = np.sqrt(x*x+y*y)
@@ -942,21 +955,27 @@ def spher_harm_bas(Xc,Yc,Zc, X, Y, Z, order):
     # for now normalizing as in matlab code
     dl = X[1]-X[0]
     scale = np.sqrt(np.amax(r)*dl)
-    # scaling as done above
     scale2 = np.sqrt(np.amax(r)*np.amin(r))
+    rs = r/scale2
 
-    Yj = []
+    Q = []
+    Q.append(np.ones(len(x)))
 
     #real part of spherical harmonics
-    for l in range(0,order+1):
-        for m in range(l*-1,l+1):
-            Yj.append(sph_harm(m,l,theta,phi).real)
+    for n in range(1,order+1):
+        p = legendre(n,np.cos(theta))
+        c = (rs**n)*p[0]
+        Q.append(c)
+        for m in range(1,n+1):
+            c = (rs**n)*p[m]*np.cos((m)*phi)
+            Q.append(c)
+            cn = (rs**n)*p[m]*np.sin((m)*phi)
+            Q.append(cn)
 
-    Yj = np.transpose(Yj)
+    Q = np.transpose(Q)
+    return Q, scale2
 
-    return Yj, scale
-
-def spher_harm_bas_v1(Xc,Yc,Zc,X,Y,Z,Order):
+def spher_harm_bas(Xc,Yc,Zc,X,Y,Z,Order):
     """Make the real spherical harmonic matrix in sequence of [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...]
     In other words: Calculate the basis vectors of the sph. harm. expansion:  """
     import math as mt
@@ -1009,6 +1028,7 @@ def spher_harm_bas_v1(Xc,Yc,Zc,X,Y,Z,Order):
                 Yj[:,mc+n+m] = pcos
                 Yj[:,mc+n-m] = psin
         mc += 2*n+1
+
     return Yj,rnorm
 
 def spher_harm_exp(V,Yj,scale):
@@ -1025,6 +1045,26 @@ def spher_harm_exp(V,Yj,scale):
     Order = int(np.sqrt(len(Mj))-1)
     for n in range(1,Order+1):
         for m in range(2*n+1):
+            i += 1
+            Mj[i] = Mj[i]/(scale**n)
+    return Mj
+
+def spher_harm_exp_v2(V,Yj,scale):
+    """Solves for the coefficients Mj that best combine with the basis to produce the potential field V."""
+    # Convert the 3D DC potential into 1D array.
+    # Numerically invert, here the actual expansion takes place and we obtain the expansion coefficients M_{j}.
+    sz = np.array(V).shape
+    npts = sz[0]*sz[1]*sz[2]
+    W=np.reshape(V,npts) # 1D array of all potential values
+    W=np.array([W]).T # make into column array
+    Mj=np.linalg.lstsq(Yj,W)
+    Mj=Mj[0] # array of coefficients
+    Order = np.sqrt(len(Mj))-1
+    # rescale to original units
+    i = 0
+    Order = int(np.sqrt(len(Mj))-1)
+    for n in range(1,Order+1):
+        for m in range(1,2*n+1):
             i += 1
             Mj[i] = Mj[i]/(scale**n)
     return Mj

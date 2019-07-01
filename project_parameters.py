@@ -28,12 +28,12 @@ trapType = 'HOA'
 """Includes project parameters relevant to import_data to build entire project in one script."""
 #simulationDirectory='C:\\Python27\\trap_simulation_software\\data\\text\\' # location of the text files
 #baseDataName = 'G_trap_field_12232013_wr40_' # Excludes the number at the end to refer to a set of text file simulations
-simulationDirectory = 'HOA_trap_v1/'
+simulationDirectory = 'HOA_trap/'
 baseDataName = 'CENTRALonly'
 dataPointsPerAxis = [941,13,15]      # number of data points along each axis of the potential
 numElectrodes = 12          # includes RF
 #savePath = 'C:\\Python27\\trap_simulation_software\\data\\' # directory to save data at
-savePath = 'HOA_trap_v1/'
+savePath = 'HOA_trap/'
 scale = 1
 perm = [1,2,0] 
 ###COORDINATES Nikos code uses y- height, z - axial, x - radial
@@ -60,14 +60,14 @@ trapOut = savePath+name+'.pkl'
 #################################################################################
 Xcorrection = 0 # known offset from the RF saddle point
 Ycorrection = 0 # known offset from the RF saddle point
-regenOrder  = 2 # order to regenerate the data to, typically 2
+regenOrder  = 4 # order to regenerate the data to, typically 2
 E = [0,0,0]     # known electric field to correct for 
 
 #################################################################################
 ############################### trap_knobs ######################################
 #################################################################################
 trapFile = savePath+name+'.pkl'  
-expansionOrder = 2 # order of multipole expansion, nearly always 2
+expansionOrder = 4 # order of multipole expansion, nearly always 2
 assert expansionOrder <= regenOrder
 reg = 0 # by regularization we mean minimizing the norm of el with addition of vectors belonging to the kernel of tf.config.multipoleCoefficients
 """Define the electrode and multipole mappings here. 

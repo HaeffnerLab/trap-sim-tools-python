@@ -5,6 +5,7 @@ harmonic expansion of the potential
 import numpy as np
 import math as mt
 from scipy.special import lpmv
+#import pyshtools
 
 def legendre(n,X):
     '''
@@ -43,12 +44,12 @@ def spher_harm_basis(r0, X, Y, Z, order):
     phi = np.arctan2(y,x)
 
     # for now normalizing as in matlab code
-    dl = X[1]-X[0]
+    dl = Z[1]-Z[0]
     scale = np.sqrt(np.amax(r)*dl)
-    rs = r/scale
+    rs = r/(scale)
 
     Q = []
-    Q.append(np.ones(len(x)))
+    Q.append(np.ones(npts))
 
     #real part of spherical harmonics
     for n in range(1,order+1):
@@ -56,9 +57,9 @@ def spher_harm_basis(r0, X, Y, Z, order):
         c = (rs**n)*p[0]
         Q.append(c)
         for m in range(1,n+1):
-            c = (rs**n)*p[m]*np.cos((m)*phi)
+            c = (rs**n)*p[m]*np.cos(m*phi)
             Q.append(c)
-            cn = (rs**n)*p[m]*np.sin((m)*phi)
+            cn = (rs**n)*p[m]*np.sin(m*phi)
             Q.append(cn)
 
     Q = np.transpose(Q)
@@ -85,10 +86,10 @@ def spher_harm_expansion(potential_grid, r0, X, Y, Z, order):
     W=np.reshape(potential_grid,npts) # 1D array of all potential values
     W=np.array([W]).T # make into column array
 
-    Yj, rnorm = spher_harm_basis(r0,X,Y,Z,order)
+    Yj, scale = spher_harm_basis(r0,X,Y,Z,order)
     #Yj, rnorm = spher_harm_basis_v2(r0, X, Y, Z, order)
 
-    Mj=np.linalg.lstsq(Yj,W,rcond=None) 
+    Mj=np.linalg.lstsq(Yj,W) 
     Mj=Mj[0] # array of coefficients
 
     # rescale to original units
@@ -96,8 +97,23 @@ def spher_harm_expansion(potential_grid, r0, X, Y, Z, order):
     for n in range(1,order+1):
         for m in range(1,2*n+2):
             i += 1
-            Mj[i] = Mj[i]/(rnorm**n)
-    return Mj
+            Mj[i] = Mj[i]/(scale**n)
+    return Mj,Yj,scale
+
+def spher_harm_cmp(Mj,Yj,scale,order):
+    '''
+    regenerates the potential (V) from the spherical harmonic coefficients. 
+    '''
+    V = []
+    #unnormalize
+    i=0
+    for n in range(1,order+1):
+        for m in range(1,2*n+2):
+            i += 1
+            Mj[i] = Mj[i]*(scale**n)
+    W = np.dot(Yj,Mj)
+    return np.real(W)
+
 
 def compute_gradient(potential,nx,ny,nz):
     # computes gradient & hessian of potential
