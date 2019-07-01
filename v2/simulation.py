@@ -9,6 +9,7 @@ resuls from BEMSolver simulations.
 import numpy as np
 import expansion as e
 import pickle
+import optimsaddle as o
 
 class simulation:
 
@@ -75,7 +76,7 @@ class simulation:
             Vs = Vs[:,:,I_min:I_max]
 
             self.electrode_names.append(trap['electrodes'][key]['name'])
-            if self.electrode_names.append(trap['electrodes'][key]['name']) == 'RF':
+            if trap['electrodes'][key]['name'] == 'RF':
                 self.RF_potential = Vs
             self.electrode_positions.append(trap['electrodes'][key]['position'])
             self.electrode_potentials.append(Vs)
@@ -121,7 +122,7 @@ class simulation:
         
         '''
 
-        N = (order + 1)**2 # number of multipoles
+        N = (self.expansion_order + 1)**2 # number of multipoles
 
         self.multipole_expansions = np.zeros((N, self.numElectrodes))
         self.electrode_potentials_regenerated = np.zeros(np.array(self.electrode_potentials).shape)
@@ -148,15 +149,17 @@ class simulation:
     def rf_saddle (self,expansion_point,order):
         ## finds the rf_saddle point near the desired expansion point and updates the expansion_position
 
-        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, expansion_point, X, Y, Z, order)
+        N = (order + 1)**2 # number of multipoles
+
+        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, expansion_point, self.X, self.Y, self.Z, order)
         self.RF_multipole_expansion = Mj[0:N].T
 
         #regenerated field
         Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
         self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
 
-        [Xrf,Yrf,Zrf] = exact_saddle(self.RF_potential,X,Y,Z,self.expansion_order,self.expansion_point)
-        [Irf,Jrf,Krf] = find_saddle(self.RF_potential,X,Y,Z,self.expansion_order,self.expansion_point)
+        [Xrf,Yrf,Zrf] = o.exact_saddle(self.RF_potential,self.X,self.Y,self.Z,order,expansion_point)
+        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,order,expansion_point)
 
         self.expansion_point = [Xrf,Yrf,Zrf]
         self.expansion_order = order
@@ -204,10 +207,11 @@ position = [0,0.07,0]
 
 s = simulation()
 s.import_data(path,ne,na,perm)
+s.rf_saddle(position,4)
 #s.compute_gradient()
 #s.compute_multipoles()
 
-s.expand_potentials_spherHarm(position,4)
+s.expand_potentials_spherHarm()
 Nmulti = len(s.multipole_expansions)
 Nelec = s.numElectrodes
 
