@@ -18,6 +18,7 @@ class simulation:
         self.electrode_hessian = []
         self.electrode_multipole = []
         self.RF_null = []
+        self.multipole_expansions = []
 
     def import_data(self, path, numElectrodes, na, perm, saveFile = None):
         '''
@@ -137,7 +138,7 @@ class simulation:
             self.multipole_expansions[:, el] = Mj[0:N].T
 
             #regenerated field
-            Vregen = e.spher_harm_cmp(Mj,Yj,scale,self.expansion_order)
+            Vregen = e.spher_harm_cmp(Mj,Yj,scale,self.regeneration_order)
             self.electrode_potentials_regenerated[el] = Vregen.reshape([self.nx,self.ny,self.nz])
 
             if self.electrode_names[el] == 'RF':
@@ -146,31 +147,39 @@ class simulation:
 
         return
 
-    def rf_saddle (self,expansion_point,order):
+    def rf_saddle (self):
         ## finds the rf_saddle point near the desired expansion point and updates the expansion_position
 
         N = (order + 1)**2 # number of multipoles
 
-        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, expansion_point, self.X, self.Y, self.Z, order)
+        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, self.expansion_point, self.X, self.Y, self.Z, self.expansion_order)
         self.RF_multipole_expansion = Mj[0:N].T
 
         #regenerated field
-        Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
+        Vregen = e.spher_harm_cmp(Mj,Yj,scale,self.regeneration_order)
         self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
 
-        [Xrf,Yrf,Zrf] = o.exact_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=expansion_point[2])
-        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=expansion_point[2])
-        print [Xrf,Yrf,Zrf]
-        print [Irf,Jrf,Krf]
+        [Xrf,Yrf,Zrf] = o.exact_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
+        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
 
         self.expansion_point = [Xrf,Yrf,Zrf]
-        print self.expansion_point
-        self.expansion_order = order
 
         return
 
+    def expand_field(self,expansion_point,expansion_order,regeneration_order):
+
+        self.expansion_point = expansion_point
+        self.expansion_order = expansion_order
+        self.regeneration_order = regeneration_order
+        self.rf_saddle()
+        self.expand_potentials_spherHarm()
+
+        return
+
+
     def set_controlled_electrodes(self, controlled_electrodes, shorted_electrodes = []):
         '''
+        XXXXXXXXXXXXXXXXXXXXXXXxNEED TO REWRITEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
         Define the set of electrodes under DC control
 
         controlled_electrodes: list of integers specifying the electrodes to be controlled, in the appropriate
@@ -194,6 +203,81 @@ class simulation:
         self.reduced_multipole_expansions = np.zeros((N, len(controlled_electrodes)))
         for k, el in enumerate(controlled_electrodes):
             self.reduced_multipole_expansions[:, k] = M_shorted[:,el]
+    
+
+    def set_used_multipoles(self,used_multipoles):
+        ## keep only the multipoles used
+        ## used_multipoles is a list of 0 or 1 the length of the # of multipoles
+        if len(self.multipole_expansions) == 0:
+            print "must expand the potential first"
+            return
+
+        used_multipoles = []
+        for i,b in enumerate(used_multipoles):
+            if b:
+                used_multipoles.append(self.multipole_expansions[:,i])
+        self.multipole_expansions = used_multipoles
+
+        return
+
+    def multipole_control(self,regularize):
+        ## inverts the multipole coefficient array to get the multipole controles
+        if len(self.multipole_expansions) == 0:
+            print "must expand the potential first"
+            return
+        M = len(self.multipole_expansions)
+        E = len(self.electrode_potentials)
+        self.multipoleControl = []
+        for i in range(M):
+            B = np.zeros(M)
+            B[i] = 1
+            A = np.linalg.lstsq(self.multipole_expansions,B)
+            self.multipoleControl.append(A[0])
+        #check nullspace & regularize if necessary
+        if M < E:
+            K = nullspace(self.multipole_expansions)
+        else:
+            print 'There is no nullspace because the coefficient matrix is rank deficient. \n There can be no regularization.'
+            K = None
+            regularize = False
+        if regularize:
+            for i in range(M):
+                Cv = self.multipoleControl[:,i].T
+                L = np.linalg.lstsq(K,Cv)
+                test = np.dot(K,L[0])
+                self.multipoleControl[:,i] = self.multipoleControl[:,i]-test
+        
+        return
+
+    def plot_multipoleCoeffs(self):
+        fig,ax = plt.subplots(6,1)
+        for n in range(Nelec):
+            if (s.electrode_names[n] in ['Q19','Q20']):
+                ax[0].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+            if (s.electrode_names[n] in ['Q21','Q22']):
+                ax[1].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+            if (s.electrode_names[n] in ['Q23','Q24']):
+                ax[2].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+            if (s.electrode_names[n] in ['Q17','Q18']):
+                ax[3].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+            if (s.electrode_names[n] in ['Q15','Q16']):
+                ax[4].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+            if (s.electrode_names[n] in ['Q39','Q40']):
+                ax[5].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
+        ax[0].legend()
+        ax[1].legend()
+        ax[2].legend()
+        ax[3].legend()
+        ax[4].legend()
+        ax[5].legend()
+
+        plt.show()
+        return
+
+    def plot_multipoleControls(self):
+        
+
+
 
 
 
