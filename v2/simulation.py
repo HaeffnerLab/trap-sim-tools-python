@@ -10,6 +10,8 @@ import numpy as np
 import expansion as e
 import pickle
 import optimsaddle as o
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 class simulation:
 
@@ -32,7 +34,8 @@ class simulation:
         try:
             f = open(path,'rb')
         except IOError:
-            return ('No pickle file found.')
+            print 'No pickle file found.'
+            return
         trap = pickle.load(f)
 
         Xi = trap['X'] #sandia defined coordinates
@@ -59,7 +62,6 @@ class simulation:
         self.Z_min = min(xs)/1000.0
 
         I_max = np.abs(Z-self.Z_max).argmin() + 20
-        print I_max 
 
         I_min = np.abs(Z-self.Z_min).argmin() - 20
         self.Z = self.Z[I_min:I_max]
@@ -123,7 +125,8 @@ class simulation:
         
         '''
 
-        N = (self.expansion_order + 1)**2 # number of multipoles
+        N = (self.expansion_order + 1)**2 # number of multipoles for expansion (might be less than for regeneration)
+        order = max(self.expansion_order,self.regeneration_order)
 
         self.multipole_expansions = np.zeros((N, self.numElectrodes))
         self.electrode_potentials_regenerated = np.zeros(np.array(self.electrode_potentials).shape)
@@ -134,7 +137,7 @@ class simulation:
 
             #multipole expansion
             potential_grid = self.electrode_potentials[el]
-            Mj,Yj,scale = e.spher_harm_expansion(potential_grid, self.expansion_point, X, Y, Z, self.expansion_order)
+            Mj,Yj,scale = e.spher_harm_expansion(potential_grid, self.expansion_point, X, Y, Z, order)
             self.multipole_expansions[:, el] = Mj[0:N].T
 
             #regenerated field
@@ -143,16 +146,17 @@ class simulation:
 
             if self.electrode_names[el] == 'RF':
                 self.RF_multipole_expansion = Mj[0:N].T
-                self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
+                #self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
 
         return
 
     def rf_saddle (self):
         ## finds the rf_saddle point near the desired expansion point and updates the expansion_position
 
-        N = (order + 1)**2 # number of multipoles
+        N = (self.expansion_order + 1)**2 # number of multipoles for expansion (might be less than for regeneration)
+        order = max(self.expansion_order,self.regeneration_order)
 
-        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, self.expansion_point, self.X, self.Y, self.Z, self.expansion_order)
+        Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, self.expansion_point, self.X, self.Y, self.Z, order)
         self.RF_multipole_expansion = Mj[0:N].T
 
         #regenerated field
@@ -235,7 +239,7 @@ class simulation:
             self.multipoleControl.append(A[0])
         #check nullspace & regularize if necessary
         if M < E:
-            K = nullspace(self.multipole_expansions)
+            K = e.nullspace(self.multipole_expansions)
         else:
             print 'There is no nullspace because the coefficient matrix is rank deficient. \n There can be no regularization.'
             K = None
@@ -249,44 +253,34 @@ class simulation:
         
         return
 
-    def plot_multipoleCoeffs(self):
-        fig,ax = plt.subplots(6,1)
-        for n in range(Nelec):
-            if (s.electrode_names[n] in ['Q19','Q20']):
-                ax[0].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-            if (s.electrode_names[n] in ['Q21','Q22']):
-                ax[1].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-            if (s.electrode_names[n] in ['Q23','Q24']):
-                ax[2].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-            if (s.electrode_names[n] in ['Q17','Q18']):
-                ax[3].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-            if (s.electrode_names[n] in ['Q15','Q16']):
-                ax[4].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-            if (s.electrode_names[n] in ['Q39','Q40']):
-                ax[5].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-        ax[0].legend()
-        ax[1].legend()
-        ax[2].legend()
-        ax[3].legend()
-        ax[4].legend()
-        ax[5].legend()
+    
 
+    def plot_multipoleCoeffs(self):
+        #plots the multipole coefficients for each electrode - should be changed to be less specific
+        fig,ax = plt.subplots(1,1)
+        Nelec = len(self.electrode_names)
+        Nmulti = len(self.multipole_expansions)
+        for n in range(Nelec):
+                ax.plot(range(Nmulti),self.multipole_expansions[:,n],'x',label = str(self.electrode_names[n]))
+        ax.legend()
         plt.show()
         return
 
-    def plot_multipoleControls(self):
-        
-
-
-
-
-
+    def plot_trapV(self,V,title=None):
+        #plots trap voltages (V) (e.g. for each multipole, or for final trapping configuration)
+        fig,ax  = plt.subplots(1,1)
+        xpos = [p[0] for p in self.electrode_positions]
+        ypos = [p[1] for p in self.electrode_positions]
+        plot = ax.scatter(xpos, ypos, 500, V, cmap = cm.hot)
+        fig.colorbar(plot)
+        plt.title(title)
+        return plt.show()
 
 
 
 ### TESTING    
-from matplotlib import pyplot as plt
-path = '../HOA_trap/CENTRALonly.pkl'
+
+path = '../HOA_trap_v1/CENTRALonly.pkl'
 na = [941,13,15]
 ne = 13
 perm = [1,2,0]
@@ -294,17 +288,11 @@ position = [0,0.07,0]
 
 s = simulation()
 s.import_data(path,ne,na,perm)
-s.rf_saddle(position,2)
-#s.compute_gradient()
-#s.compute_multipoles()
-
-s.expand_potentials_spherHarm()
-Nmulti = len(s.multipole_expansions)
-Nelec = s.numElectrodes
+s.expand_field(position,3,5)
 
 #plotting potentials
 fig,ax = plt.subplots(2,1)
-for n in range(Nelec):
+for n in range(len(s.electrode_positions)):
    if s.electrode_names[n] != "RF":
        ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
        ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
@@ -312,72 +300,15 @@ ax[0].legend()
 ax[1].legend()
 plt.show()
 
+s.plot_multipoleCoeffs()
 
-# #plotting gradients
-# fig,ax = plt.subplots(3,1)
-# for n in range(Nelec):
+s.multipole_control(False)
 
-#    if s.electrode_names[n] != "RF":
-#         for i in range(3):
-#             ax[i].plot(s.Z,s.electrode_grad[n][i][6][7],label = str(s.electrode_names[n])+'grad'+str(i))
-# ax[0].legend()
-# ax[1].legend()
-# ax[2].legend()
-# plt.show()
-
-#plotting multipoles
-#fig,ax = plt.subplots(9,3)
-#for n in range(Nelec):
-#    if s.electrode_names[n] != "RF":
+for n in range(len(s.multipoleControl)):
+    s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
 
 
 
 
 
-###################################################################
-#checking spherical harmonic basis
-Yj1, rnorm1 = e.spher_harm_basis(position, s.X, s.Y, s.Z, 2)
 
-y, x, z = np.meshgrid(s.Y,s.X,s.Z)
-
-x, y, z = np.reshape(x,(s.npts)), np.reshape(y,(s.npts)), np.reshape(z,(s.npts))
-
-fig,ax = plt.subplots(9,3)
-
-for n in range(9):
-    Y3 = Yj1[:,n].reshape(s.nx,s.ny,s.nz)
-    a = ax[n][0].imshow(Y3[:,5,:])
-    b = ax[n][1].imshow(Y3[6,:,:])
-    c = ax[n][2].imshow(Y3[:,:,48])
-    fig.colorbar(a,ax=ax[n][0])
-    fig.colorbar(b,ax=ax[n][1])
-    fig.colorbar(b,ax=ax[n][2])
-
-plt.show()
-    
-
-############################################################
-# plotting multipole coefficients 
-fig,ax = plt.subplots(6,1)
-for n in range(Nelec):
-    if (s.electrode_names[n] in ['Q19','Q20']):
-        ax[0].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-    if (s.electrode_names[n] in ['Q21','Q22']):
-        ax[1].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-    if (s.electrode_names[n] in ['Q23','Q24']):
-        ax[2].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-    if (s.electrode_names[n] in ['Q17','Q18']):
-        ax[3].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-    if (s.electrode_names[n] in ['Q15','Q16']):
-        ax[4].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-    if (s.electrode_names[n] in ['Q39','Q40']):
-        ax[5].plot(range(Nmulti),s.multipole_expansions[:,n],'x',label = str(s.electrode_names[n]))
-
-ax[0].legend()
-ax[1].legend()
-ax[2].legend()
-ax[3].legend()
-ax[4].legend()
-ax[5].legend()
-
-plt.show()

@@ -351,7 +351,6 @@ def post_process_trap():
     print('RF Analysis')           
     Vrf = RFampl*data.EL_RF
     [Irf,Jrf,Krf] = find_saddle(Vrf,X,Y,Z,2,Zval)
-    print X[10],Y[12],Z[10]
     if debug.post_process_trap:
         plot_potential(Vrf,X,Y,Z,dcplot,'weighted RF potential','V_{rf} (eV)',[Irf,Jrf,Krf])
     #2) DC Analysis
@@ -385,7 +384,6 @@ def post_process_trap():
     [fx,fy,fz,theta,Depth,Xe,Ye,Ze] = pfit(Vrf,Vdc,X,Y,Z,Irf,Jrf,Krf)#pfit(trap,E,Freq,RFampl)
     print('Stray field is ({0},{1},{2}) V/m.'.format(scale*E[0],scale*E[1],scale*E[2]))
     print('With this field, the compensation is optimized to {} micron.'.format(scale*dist))
-    print Irf,Jrf,Krf,Idc,Jdc,Kdc
     print('RF saddle: ({0},{1},{2})\nDC saddle ({3},{4},{5}).'.format(Xrf,Yrf,Zrf,Xdc,Ydc,Zdc)) 
     if debug.trap_depth:
         print('The trap escape position is at ({0},{1},{2}) microns, for a trap depth of {3} mV'.format(Xe*scale,Ye*scale,Ze*scale,Depth*scale))

@@ -5,6 +5,7 @@ harmonic expansion of the potential
 import numpy as np
 import math as mt
 from scipy.special import lpmv
+from scipy import linalg, matrix
 #import pyshtools
 
 def legendre(n,X):
@@ -144,6 +145,13 @@ def compute_multipoles(grad,hessian):
     multipoles.append(0.25*hessian[0][2])                                        #xz
 
     return multipoles
+
+def nullspace(A,eps=1e-15):
+    u,s,vh = scipy.linalg.svd(A)
+    null_mask = (s <= eps)
+    null_space = scipy.compress(null_mask, vh, axis=0)
+    return scipy.transpose(null_space)
+
 
 
 
