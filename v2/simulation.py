@@ -15,12 +15,16 @@ from matplotlib import cm
 
 class simulation:
 
-    def __init__(self):
+    def __init__(self,charge, mass):
         self.electrode_grad = []
         self.electrode_hessian = []
         self.electrode_multipole = []
         self.RF_null = []
         self.multipole_expansions = []
+        self.instances = []
+
+        self.charge = charge
+        self.mass = mass
 
     def import_data(self, path, numElectrodes, na, perm, saveFile = None):
         '''
@@ -225,7 +229,8 @@ class simulation:
         return
 
     def multipole_control(self,regularize):
-        ## inverts the multipole coefficient array to get the multipole controles
+        ## inverts the multipole coefficient array to get the multipole controls
+        ## (e.g. voltages)
         if len(self.multipole_expansions) == 0:
             print "must expand the potential first"
             return
@@ -253,7 +258,53 @@ class simulation:
         
         return
 
-    
+    def setVoltages(self,coeffs,name = None):
+        # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
+        # creates an instance that will be used to save trap attributes for different configurations
+        voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
+        instance = {'name':name,'coeffs',coeffs,'voltages':voltages,'potential':False,'U':False}
+        self.instances.append(instance)
+
+        return
+
+    def dcPotential(self):
+        # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
+        #### should add stray field.
+        for instance in self.instances:
+            if not instance['potential']:
+                potential = np.zeros((self.nx,self.ny,self.nz))
+                for i in range(self.numElectrodes):
+                    potential = potential + instance['voltages'][i]*self.electrode_potentials[i]
+                instance['potential'] = [potential]
+        return
+
+    def post_process(self):
+        # finds the secular frequencies, tilt angle, and position of the dc saddle point
+        dx = self.X[1]-self.X[0]
+        dy = self.Y[1]-self.Y[0]
+        dz = self.Z[1]-self.Z[0]
+        y, x, z = np.meshgrid(self.Y,self.X,self.Z)
+
+        [Ex_RF,Ey_RF,Ez_RF] = np.gradient(self.RF_potential,dx,dy,dz)
+        Esq_RF = Ex**2 + Ey**2 + Ez**2
+        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
+
+        PseudoPhi = Esq*(self.charge**2)/(4*self.mass*self.Omega**2)
+        for instance in self.instances:
+            if not instance['U']:
+                [fx,fy,fz] = e.trapFrequencies
+                U = PseudoPhi + self.charge*instance['potential']
+                instance['U'] = U
+                Uxy = U[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]
+                maxU = np.amax(Uxy)
+                Uxy = Uxy/MU
+                dl = dx*5 ## not sure why this scaling exists.
+                xr = (self.X[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.X[Irf,Jrf,Krf])/dl
+                yr = (self.Y[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.Y[Irf,Jrf,Krf])/dl
+                C1,C2,theta = p2d(Uxy,xr,yr)
+                instance['fx'] = 1e3*np.sqrt
+                instance
+
 
     def plot_multipoleCoeffs(self):
         #plots the multipole coefficients for each electrode - should be changed to be less specific
@@ -271,10 +322,17 @@ class simulation:
         fig,ax  = plt.subplots(1,1)
         xpos = [p[0] for p in self.electrode_positions]
         ypos = [p[1] for p in self.electrode_positions]
-        plot = ax.scatter(xpos, ypos, 500, V, cmap = cm.hot)
+        plot = ax.scatter(xpos, ypos, 500, V)
         fig.colorbar(plot)
         plt.title(title)
-        return plt.show()
+        plt.show()
+        return
+
+    def plot_potential(self,potential, title=None)
+        # plots a give potential ... need to implement
+        return
+
+
 
 
 
@@ -290,23 +348,34 @@ s = simulation()
 s.import_data(path,ne,na,perm)
 s.expand_field(position,3,5)
 
-#plotting potentials
-fig,ax = plt.subplots(2,1)
-for n in range(len(s.electrode_positions)):
-   if s.electrode_names[n] != "RF":
-       ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
-       ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
-ax[0].legend()
-ax[1].legend()
-plt.show()
+# #plotting potentials
+# fig,ax = plt.subplots(2,1)
+# for n in range(len(s.electrode_positions)):
+#    if s.electrode_names[n] != "RF":
+#        ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
+#        ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
+# ax[0].legend()
+# ax[1].legend()
+# plt.show()
 
-s.plot_multipoleCoeffs()
+#s.plot_multipoleCoeffs()
 
 s.multipole_control(False)
 
-for n in range(len(s.multipoleControl)):
-    s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
+# for n in range(len(s.multipoleControl)):
+#     s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
 
+coeffs_Trapping = np.zeros((s.expansion_order+1)**2)
+coeffs_Trapping[6] = 10 ## z**2 term
+el_Trapping = s.setVoltages(coeffs_Trapping)
+s.plot_trapV(el_Trapping,"trapping voltages")
+
+
+
+charge = 1.6021764e-19
+mass = 1.67262158e-27 * 40
+RF_ampl = 100 #why in mV?
+RF_freq = 50e6 #in Hz
 
 
 

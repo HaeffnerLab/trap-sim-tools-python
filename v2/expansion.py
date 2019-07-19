@@ -152,6 +152,28 @@ def nullspace(A,eps=1e-15):
     null_space = scipy.compress(null_mask, vh, axis=0)
     return scipy.transpose(null_space)
 
+def p2d(V,x,y):
+    #fit a 2d polynomial to the potential in V
+    # x and y are the 2d coordinate matrices on which the function is definied
+    #Af Bf and theta are the curvatures in teh xr axis, yr axes and theta is the angle between x and xr. 
+
+    N  = len(x)*len(y)
+    con = np.ones(x.shape)
+
+    xx,yy,xy = np.reshape(x**2,N), np.reshape(y**2,N), np.reshape(x*y,N)
+    xxx,yyy,xxy,xyy = np.reshape(xx*x,N),np.reshape(yy*y,N),np.reshape(xx*y,N),np.reshape(x*yy,N)
+    xxxx,yyyy,xxxy,xxyy,xyyy = np.reshape(xx**2,N),np.reshape(yy**2,N),np.reshape(xxx*y,N),np.reshape(xx*yy,N),np.reshape(x*yyy,N)
+    V2 = np.reshape(V,N)
+    Q = np.hstack((xxxx,yyyy,xxxy,xxyy,xyy,xxx,yyy,xxy,xy,xx,yy,xy,x,y,con))
+    c = np.linalg.lstsq(Q,V2)
+    c = c[0]
+    theta=-0.5*np.arctan(c[11]/(c[10]-c[9]))
+    Af=0.5*(c[9]*(1+1./np.cos(2*theta))+c[10]*(1-1./np.cos(2*theta)))
+    Bf=0.5*(c[9]*(1-1./np.cos(2*theta))+c[10]*(1+1./np.cos(2*theta)))
+    theta=180.*theta/np.pi
+    return (Af, Bf, theta)
+
+
 
 
 
