@@ -258,52 +258,52 @@ class simulation:
         
         return
 
-    def setVoltages(self,coeffs,name = None):
-        # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
-        # creates an instance that will be used to save trap attributes for different configurations
-        voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
-        instance = {'name':name,'coeffs',coeffs,'voltages':voltages,'potential':False,'U':False}
-        self.instances.append(instance)
+    # def setVoltages(self,coeffs,name = None):
+    #     # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
+    #     # creates an instance that will be used to save trap attributes for different configurations
+    #     voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
+    #     instance = {'name':name,'coeffs',coeffs,'voltages':voltages,'potential':False,'U':False}
+    #     self.instances.append(instance)
 
-        return
+    #     return
 
-    def dcPotential(self):
-        # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
-        #### should add stray field.
-        for instance in self.instances:
-            if not instance['potential']:
-                potential = np.zeros((self.nx,self.ny,self.nz))
-                for i in range(self.numElectrodes):
-                    potential = potential + instance['voltages'][i]*self.electrode_potentials[i]
-                instance['potential'] = [potential]
-        return
+    # def dcPotential(self):
+    #     # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
+    #     #### should add stray field.
+    #     for instance in self.instances:
+    #         if not instance['potential']:
+    #             potential = np.zeros((self.nx,self.ny,self.nz))
+    #             for i in range(self.numElectrodes):
+    #                 potential = potential + instance['voltages'][i]*self.electrode_potentials[i]
+    #             instance['potential'] = [potential]
+    #     return
 
-    def post_process(self):
-        # finds the secular frequencies, tilt angle, and position of the dc saddle point
-        dx = self.X[1]-self.X[0]
-        dy = self.Y[1]-self.Y[0]
-        dz = self.Z[1]-self.Z[0]
-        y, x, z = np.meshgrid(self.Y,self.X,self.Z)
+    # def post_process(self):
+    #     # finds the secular frequencies, tilt angle, and position of the dc saddle point
+    #     dx = self.X[1]-self.X[0]
+    #     dy = self.Y[1]-self.Y[0]
+    #     dz = self.Z[1]-self.Z[0]
+    #     y, x, z = np.meshgrid(self.Y,self.X,self.Z)
 
-        [Ex_RF,Ey_RF,Ez_RF] = np.gradient(self.RF_potential,dx,dy,dz)
-        Esq_RF = Ex**2 + Ey**2 + Ez**2
-        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
+    #     [Ex_RF,Ey_RF,Ez_RF] = np.gradient(self.RF_potential,dx,dy,dz)
+    #     Esq_RF = Ex**2 + Ey**2 + Ez**2
+    #     [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
 
-        PseudoPhi = Esq*(self.charge**2)/(4*self.mass*self.Omega**2)
-        for instance in self.instances:
-            if not instance['U']:
-                [fx,fy,fz] = e.trapFrequencies
-                U = PseudoPhi + self.charge*instance['potential']
-                instance['U'] = U
-                Uxy = U[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]
-                maxU = np.amax(Uxy)
-                Uxy = Uxy/MU
-                dl = dx*5 ## not sure why this scaling exists.
-                xr = (self.X[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.X[Irf,Jrf,Krf])/dl
-                yr = (self.Y[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.Y[Irf,Jrf,Krf])/dl
-                C1,C2,theta = p2d(Uxy,xr,yr)
-                instance['fx'] = 1e3*np.sqrt
-                instance
+    #     PseudoPhi = Esq*(self.charge**2)/(4*self.mass*self.Omega**2)
+    #     for instance in self.instances:
+    #         if not instance['U']:
+    #             [fx,fy,fz] = e.trapFrequencies
+    #             U = PseudoPhi + self.charge*instance['potential']
+    #             instance['U'] = U
+    #             Uxy = U[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]
+    #             maxU = np.amax(Uxy)
+    #             Uxy = Uxy/MU
+    #             dl = dx*5 ## not sure why this scaling exists.
+    #             xr = (self.X[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.X[Irf,Jrf,Krf])/dl
+    #             yr = (self.Y[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.Y[Irf,Jrf,Krf])/dl
+    #             C1,C2,theta = p2d(Uxy,xr,yr)
+    #             instance['fx'] = 1e3*np.sqrt
+    #             instance
 
 
     def plot_multipoleCoeffs(self):
@@ -328,9 +328,9 @@ class simulation:
         plt.show()
         return
 
-    def plot_potential(self,potential, title=None)
-        # plots a give potential ... need to implement
-        return
+    # def plot_potential(self,potential, title=None)
+    #     # plots a give potential ... need to implement
+    #     return
 
 
 
