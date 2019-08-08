@@ -254,19 +254,35 @@ class simulation:
                 Cv = self.multipoleControl[:,i].T
                 L = np.linalg.lstsq(K,Cv)
                 test = np.dot(K,L[0])
-                self.multipoleControl[:,i] = self.multipoleControl[:,i]-test
+                self.multipoleControl[i] = self.multipoleControl[i]-test
         
         return
 
-    # def setVoltages(self,coeffs,name = None):
-    #     # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
-    #     # creates an instance that will be used to save trap attributes for different configurations
-    #     voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
-    #     instance = {'name':name,'coeffs',coeffs,'voltages':voltages,'potential':False,'U':False}
-    #     self.instances.append(instance)
+    def print_cFile(self,fName=None):
+        #prints the current c file to a file for labrad to use. 
+        #takes an optional file name, otherwise just saves it as Cfile.txt
+        #just a text file with a single column with (# rows) = (# electrodes)*(# multipoles)
+        if fName == None:
+            fName = 'Cfile.txt'
+        f = open(fName,'w')
+        for i in range(0,len(self.multipoleControl[1])):
+            np.savetxt(f, self.multipoleControl[i], delimiter=",")
+        f.close()
 
-    #     return
+        return
 
+
+
+    def setVoltages(self,coeffs,name = None):
+        # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
+        # creates an instance that will be used to save trap attributes for different configurations
+        voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
+        instance = {'name':name,'coeffs':coeffs,'voltages':voltages,'potential':False,'U':False}
+        self.instances.append(instance)
+
+        return voltages
+
+    ###########################TO BE IMPLEMENTED #####################################
     # def dcPotential(self):
     #     # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
     #     #### should add stray field.
@@ -319,6 +335,7 @@ class simulation:
 
     def plot_trapV(self,V,title=None):
         #plots trap voltages (V) (e.g. for each multipole, or for final trapping configuration)
+        print V
         fig,ax  = plt.subplots(1,1)
         xpos = [p[0] for p in self.electrode_positions]
         ypos = [p[1] for p in self.electrode_positions]
@@ -339,31 +356,40 @@ class simulation:
 ### TESTING    
 
 path = '../HOA_trap_v1/CENTRALonly.pkl'
-na = [941,13,15]
-ne = 13
-perm = [1,2,0]
-position = [0,0.07,0]
+na = [941,13,15] # number of points per axis
+ne = 13 # number of electrodes
+perm = [1,2,0] #in this code y(coord 2)- height, z(coord 3) - axial, x(coord 1) - radial
+position = [0,0.07,0] 
 
-s = simulation()
+charge = 1.6021764e-19
+mass = 1.67262158e-27 * 40
+RF_ampl = 100 
+RF_freq = 50e6 #in Hz
+
+
+s = simulation(charge,mass)
 s.import_data(path,ne,na,perm)
-s.expand_field(position,3,5)
+s.expand_field(position,3,3)
 
-# #plotting potentials
-# fig,ax = plt.subplots(2,1)
-# for n in range(len(s.electrode_positions)):
-#    if s.electrode_names[n] != "RF":
-#        ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
-#        ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
-# ax[0].legend()
-# ax[1].legend()
-# plt.show()
+#plotting potentials
+fig,ax = plt.subplots(2,1)
+for n in range(len(s.electrode_positions)):
+   if s.electrode_names[n] != "RF":
+       ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
+       ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
+ax[0].legend()
+ax[1].legend()
+plt.show()
 
-#s.plot_multipoleCoeffs()
+s.plot_multipoleCoeffs()
 
 s.multipole_control(False)
+print s.multipoleControl[1]
 
 # for n in range(len(s.multipoleControl)):
 #     s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
+
+s.print_cFile('test.txt') # file includes *all* multipoles that should be available for the user in the gui.
 
 coeffs_Trapping = np.zeros((s.expansion_order+1)**2)
 coeffs_Trapping[6] = 10 ## z**2 term
@@ -372,10 +398,6 @@ s.plot_trapV(el_Trapping,"trapping voltages")
 
 
 
-charge = 1.6021764e-19
-mass = 1.67262158e-27 * 40
-RF_ampl = 100 #why in mV?
-RF_freq = 50e6 #in Hz
 
 
 
