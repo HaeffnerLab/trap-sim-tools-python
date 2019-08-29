@@ -15,7 +15,7 @@ from matplotlib import cm
 
 class simulation:
 
-    def __init__(self,charge, mass):
+    def __init__(self,charge, mass, useRF = False):
         self.electrode_grad = []
         self.electrode_hessian = []
         self.electrode_multipole = []
@@ -25,6 +25,7 @@ class simulation:
 
         self.charge = charge
         self.mass = mass
+        self.useRF = useRF
 
     def import_data(self, path, numElectrodes, na, perm, saveFile = None):
         '''
@@ -82,11 +83,19 @@ class simulation:
             Vs = np.transpose(Vs,perm)
             Vs = Vs[:,:,I_min:I_max]
 
-            self.electrode_names.append(trap['electrodes'][key]['name'])
+            
             if trap['electrodes'][key]['name'] == 'RF':
                 self.RF_potential = Vs
-            self.electrode_positions.append(trap['electrodes'][key]['position'])
-            self.electrode_potentials.append(Vs)
+                if self.useRF:
+                    self.electrode_names.append(trap['electrodes'][key]['name'])
+                    self.electrode_positions.append(trap['electrodes'][key]['position'])
+                    self.electrode_potentials.append(Vs)
+            else:
+                self.electrode_names.append(trap['electrodes'][key]['name'])
+                self.electrode_positions.append(trap['electrodes'][key]['position'])
+                self.electrode_potentials.append(Vs)
+
+            
 
         return
 
