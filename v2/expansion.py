@@ -6,6 +6,7 @@ import numpy as np
 import math as mt
 from scipy.special import lpmv
 from scipy import linalg, matrix
+import scipy
 #import pyshtools
 
 def legendre(n,X):

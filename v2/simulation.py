@@ -222,7 +222,7 @@ class simulation:
             self.reduced_multipole_expansions[:, k] = M_shorted[:,el]
     
 
-    def set_used_multipoles(self,used_multipoles):
+    def set_used_multipoles(self,multipoles_toUse):
         ## keep only the multipoles used
         ## used_multipoles is a list of 0 or 1 the length of the # of multipoles
         if len(self.multipole_expansions) == 0:
@@ -230,9 +230,9 @@ class simulation:
             return
 
         used_multipoles = []
-        for i,b in enumerate(used_multipoles):
+        for i,b in enumerate(multipoles_toUse):
             if b:
-                used_multipoles.append(self.multipole_expansions[:,i])
+                used_multipoles.append(self.multipole_expansions[i,:])
         self.multipole_expansions = used_multipoles
 
         return
@@ -274,8 +274,9 @@ class simulation:
         if fName == None:
             fName = 'Cfile.txt'
         f = open(fName,'w')
-        for i in range(0,len(self.multipoleControl[1])):
+        for i in range(len(self.multipoleControl)):
             np.savetxt(f, self.multipoleControl[i], delimiter=",")
+        print self.electrode_names
         f.close()
 
         return
@@ -334,7 +335,7 @@ class simulation:
     def plot_multipoleCoeffs(self):
         #plots the multipole coefficients for each electrode - should be changed to be less specific
         fig,ax = plt.subplots(1,1)
-        Nelec = len(self.electrode_names)
+        Nelec = self.numElectrodes
         Nmulti = len(self.multipole_expansions)
         for n in range(Nelec):
                 ax.plot(range(Nmulti),self.multipole_expansions[:,n],'x',label = str(self.electrode_names[n]))
@@ -344,7 +345,6 @@ class simulation:
 
     def plot_trapV(self,V,title=None):
         #plots trap voltages (V) (e.g. for each multipole, or for final trapping configuration)
-        print V
         fig,ax  = plt.subplots(1,1)
         xpos = [p[0] for p in self.electrode_positions]
         ypos = [p[1] for p in self.electrode_positions]
@@ -366,7 +366,7 @@ class simulation:
 
 path = '../HOA_trap_v1/CENTRALonly.pkl'
 na = [941,13,15] # number of points per axis
-ne = 13 # number of electrodes
+ne = 12 # number of electrodes
 perm = [1,2,0] #in this code y(coord 2)- height, z(coord 3) - axial, x(coord 1) - radial
 position = [0,0.07,0] 
 
@@ -378,32 +378,39 @@ RF_freq = 50e6 #in Hz
 
 s = simulation(charge,mass)
 s.import_data(path,ne,na,perm)
-s.expand_field(position,3,3)
+s.expand_field(position,2,2)
 
 #plotting potentials
 fig,ax = plt.subplots(2,1)
 for n in range(len(s.electrode_positions)):
-   if s.electrode_names[n] != "RF":
-       ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
-       ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
+    ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
+    ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
 ax[0].legend()
 ax[1].legend()
 plt.show()
 
 s.plot_multipoleCoeffs()
 
+usedMultipoles = np.zeros((s.expansion_order+1)**2)
+usedMultipoles[0:6] = np.ones(6)
+s.set_used_multipoles(usedMultipoles)
 s.multipole_control(False)
-print s.multipoleControl[1]
 
-# for n in range(len(s.multipoleControl)):
-#     s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
+print s.multipoleControl
 
-s.print_cFile('test.txt') # file includes *all* multipoles that should be available for the user in the gui.
 
-coeffs_Trapping = np.zeros((s.expansion_order+1)**2)
-coeffs_Trapping[6] = 10 ## z**2 term
-el_Trapping = s.setVoltages(coeffs_Trapping)
-s.plot_trapV(el_Trapping,"trapping voltages")
+for n in range(len(s.multipoleControl)):
+    s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
+
+s.print_cFile('test2.cls') # file includes *all* multipoles that should be available for the user in the gui.
+
+vs_solution1 = np.zeros(ne)
+vs_solution1[1] = -0.91
+vs_solution1[3] = -1
+vs_solution1[10] = -1
+vs_solution1[9] = -0.919
+coeffs_solution1 = np.dot(s.multipole_expansions,vs_solution1)
+print coeffs_solution1
 
 
 
