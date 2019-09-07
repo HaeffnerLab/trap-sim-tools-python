@@ -21,31 +21,46 @@ class simulation:
         self.electrode_multipole = []
         self.RF_null = []
         self.multipole_expansions = []
-        self.instances = []
 
         self.charge = charge
         self.mass = mass
         self.useRF = useRF
 
-    def import_data(self, path, numElectrodes, na, perm, saveFile = None):
+    def import_data(self, path, numElectrodes, na, perm):
         '''
-        path: file path to the potential data
-        pointsPerAxis: number of data points in each axis of the simulation grid
+        path: file path to the potential data. This should be a .pkl file containing a dictionary with the following keys:
+            trap['X'] = X values 
+            trap['Y'] = Y values
+            trap['Z'] = Z values
+            trap['electrodes'] = dictionary with one entry for each electrode. each electrode has the following keys. 
+                We're using Q14 as an example of an electrode key
+                trap['electrodes']['Q14'][name] = 'Q14'
+                trap['electrodes']['Q14'][position] = position on the chip (just used for pretty plotting)
+                trap['electrodes']['Q14']['V'] = grid of potential values (should be a nx*ny*nz by 1 vector that will be reshaped properly)
+        
+        For HOA traps, this .pkl file can be made with the jupyter notebook import_data_HOA
+
+        For other traps, other import functions could be added.
+
+        na: number of data points in each axis of the simulation grid
         numElectrodes: number of electrodes in the simulation
-        saveFile: optional file to save the output dictionary
+        perm: permutation to get axes in the potential file to match axes assumed in this code:
+            in this code, coordinates are [radial, height, axial]
+            for the HOA, coordinates are [axial, radial, height] so perm would be [1,2,0]
         
         adds to self X, Y, Z axes, name, position, and potentials for each electrode, max & min electrode position for used electrodes
         '''
         try:
             f = open(path,'rb')
         except IOError:
-            print 'No pickle file found.'
+            print 'ERROR: No pickle file found.'
             return
         trap = pickle.load(f)
 
         Xi = trap['X'] #sandia defined coordinates
         Yi = trap['Y']
         Zi = trap['Z']
+        print np.array(Xi).shape
         #get everything into expected coordinates (described in project_paramters)
         coords = [Xi,Yi,Zi]
         X = coords[perm[0]]
@@ -71,6 +86,7 @@ class simulation:
         I_min = np.abs(Z-self.Z_min).argmin() - 20
         self.Z = self.Z[I_min:I_max]
         self.nz = I_max-I_min
+
         self.npts = self.nx*self.ny*self.nz
 
         self.electrode_potentials = []
@@ -83,7 +99,6 @@ class simulation:
             Vs = np.transpose(Vs,perm)
             Vs = Vs[:,:,I_min:I_max]
 
-            
             if trap['electrodes'][key]['name'] == 'RF':
                 self.RF_potential = Vs
                 if self.useRF:
@@ -95,39 +110,8 @@ class simulation:
                 self.electrode_positions.append(trap['electrodes'][key]['position'])
                 self.electrode_potentials.append(Vs)
 
-            
-
         return
 
-    def compute_gradient(self):
-        # computes gradient & hessian of potential
-        if len(self.electrode_grad) != 0:
-            print "gradient already computed"
-            return
-        else:
-            nx = len(self.X)
-            ny = len(self.Y)
-            nz = len(self.Z)
-
-            self.electrode_grad = np.empty((self.numElectrodes, 3, nx,ny,nz))
-            self.electrode_hessian = np.empty((self.numElectrodes,3,3,nx,ny,nz))
-
-            for i, el in enumerate(self.electrode_potentials):
-                grad,hessian = e.compute_gradient(el,nx,ny,nz)
-                self.electrode_grad[i,:,:,:,:] = grad
-                self.electrode_hessian[i,:,:,:,:,:] = hessian
-        return
-
-    def compute_multipoles(self):
-        if len(self.electrode_multipole) != 0:
-            print "multipoles already computed"
-            return
-        else:
-            for i,el in enumerate(self.electrode_potentials):
-                g = self.electrode_grad[i]
-                h = self.electrode_hessian[i]
-                self.electrode_multipole.append(e.compute_multipoles(g,h))
-        return
 
     def expand_potentials_spherHarm(self):
         '''
@@ -139,7 +123,7 @@ class simulation:
         '''
 
         N = (self.expansion_order + 1)**2 # number of multipoles for expansion (might be less than for regeneration)
-        order = max(self.expansion_order,self.regeneration_order)
+        order = self.expansion_order
 
         self.multipole_expansions = np.zeros((N, self.numElectrodes))
         self.electrode_potentials_regenerated = np.zeros(np.array(self.electrode_potentials).shape)
@@ -154,40 +138,39 @@ class simulation:
             self.multipole_expansions[:, el] = Mj[0:N].T
 
             #regenerated field
-            Vregen = e.spher_harm_cmp(Mj,Yj,scale,self.regeneration_order)
+            Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
             self.electrode_potentials_regenerated[el] = Vregen.reshape([self.nx,self.ny,self.nz])
 
             if self.electrode_names[el] == 'RF':
                 self.RF_multipole_expansion = Mj[0:N].T
-                #self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
 
         return
 
     def rf_saddle (self):
         ## finds the rf_saddle point near the desired expansion point and updates the expansion_position
 
-        N = (self.expansion_order + 1)**2 # number of multipoles for expansion (might be less than for regeneration)
-        order = max(self.expansion_order,self.regeneration_order)
+        N = (self.expansion_order + 1)**2 # number of multipoles for expansion 
+        order = self.expansion_order
 
         Mj,Yj,scale = e.spher_harm_expansion(self.RF_potential, self.expansion_point, self.X, self.Y, self.Z, order)
         self.RF_multipole_expansion = Mj[0:N].T
 
         #regenerated field
-        Vregen = e.spher_harm_cmp(Mj,Yj,scale,self.regeneration_order)
+        Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
         self.RF_potential_regenerated = Vregen.reshape([self.nx,self.ny,self.nz])
 
         [Xrf,Yrf,Zrf] = o.exact_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
         [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
 
         self.expansion_point = [Xrf,Yrf,Zrf]
+        self.expansion_coords = [Irf,Jrf,Krf]
 
         return
 
-    def expand_field(self,expansion_point,expansion_order,regeneration_order):
+    def expand_field(self,expansion_point,expansion_order):
 
         self.expansion_point = expansion_point
         self.expansion_order = expansion_order
-        self.regeneration_order = regeneration_order
         self.rf_saddle()
         self.expand_potentials_spherHarm()
 
@@ -226,7 +209,7 @@ class simulation:
         ## keep only the multipoles used
         ## used_multipoles is a list of 0 or 1 the length of the # of multipoles
         if len(self.multipole_expansions) == 0:
-            print "must expand the potential first"
+            print "ERROR: must expand the potential first"
             return
 
         used_multipoles = []
@@ -241,7 +224,7 @@ class simulation:
         ## inverts the multipole coefficient array to get the multipole controls
         ## (e.g. voltages)
         if len(self.multipole_expansions) == 0:
-            print "must expand the potential first"
+            print "ERROR: must expand the potential first"
             return
         M = len(self.multipole_expansions)
         E = len(self.electrode_potentials)
@@ -267,28 +250,32 @@ class simulation:
         
         return
 
-    def print_cFile(self,fName=None):
-        #prints the current c file to a file for labrad to use. 
-        #takes an optional file name, otherwise just saves it as Cfile.txt
-        #just a text file with a single column with (# rows) = (# electrodes)*(# multipoles)
+    def print_cFile(self, pad = 0, fName=None):
+        '''
+        prints the current c file to a file for labrad to use, 
+            just a text file with a single column with (# rows) = (# electrodes)*(# multipoles) 
+
+        takes an optional file name, otherwise just saves it as Cfile.txt
+
+        pad is the number of extra 0s for electrodes that are connected at the dac but considered in the simulation.
+            this should not be necessary after set_controlled_electrodes is correctly implemented
+        '''
         if fName == None:
             fName = 'Cfile.txt'
         f = open(fName,'w')
+        pad = np.zeros(pad)
         for i in range(len(self.multipoleControl)):
             np.savetxt(f, self.multipoleControl[i], delimiter=",")
+            np.savetxt(f, pad, delimiter=",")
         print self.electrode_names
         f.close()
 
         return
 
-
-
     def setVoltages(self,coeffs,name = None):
         # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
         # creates an instance that will be used to save trap attributes for different configurations
         voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
-        instance = {'name':name,'coeffs':coeffs,'voltages':voltages,'potential':False,'U':False}
-        self.instances.append(instance)
 
         return voltages
 
@@ -333,7 +320,7 @@ class simulation:
 
 
     def plot_multipoleCoeffs(self):
-        #plots the multipole coefficients for each electrode - should be changed to be less specific
+        #plots the multipole coefficients for each electrode
         fig,ax = plt.subplots(1,1)
         Nelec = self.numElectrodes
         Nmulti = len(self.multipole_expansions)
@@ -353,64 +340,6 @@ class simulation:
         plt.title(title)
         plt.show()
         return
-
-    # def plot_potential(self,potential, title=None)
-    #     # plots a give potential ... need to implement
-    #     return
-
-
-
-
-
-### TESTING    
-
-path = '../HOA_trap_v1/CENTRALonly.pkl'
-na = [941,13,15] # number of points per axis
-ne = 12 # number of electrodes
-perm = [1,2,0] #in this code y(coord 2)- height, z(coord 3) - axial, x(coord 1) - radial
-position = [0,0.07,0] 
-
-charge = 1.6021764e-19
-mass = 1.67262158e-27 * 40
-RF_ampl = 100 
-RF_freq = 50e6 #in Hz
-
-
-s = simulation(charge,mass)
-s.import_data(path,ne,na,perm)
-s.expand_field(position,2,2)
-
-#plotting potentials
-fig,ax = plt.subplots(2,1)
-for n in range(len(s.electrode_positions)):
-    ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
-    ax[1].plot(s.Z,s.electrode_potentials_regenerated[n][6][7],label = str(s.electrode_names[n]))
-ax[0].legend()
-ax[1].legend()
-plt.show()
-
-s.plot_multipoleCoeffs()
-
-usedMultipoles = np.zeros((s.expansion_order+1)**2)
-usedMultipoles[0:6] = np.ones(6)
-s.set_used_multipoles(usedMultipoles)
-s.multipole_control(False)
-
-print s.multipoleControl
-
-
-for n in range(len(s.multipoleControl)):
-    s.plot_trapV(s.multipoleControl[n],"Multipole " + str(n))
-
-s.print_cFile('test2.cls') # file includes *all* multipoles that should be available for the user in the gui.
-
-vs_solution1 = np.zeros(ne)
-vs_solution1[1] = -0.91
-vs_solution1[3] = -1
-vs_solution1[10] = -1
-vs_solution1[9] = -0.919
-coeffs_solution1 = np.dot(s.multipole_expansions,vs_solution1)
-print coeffs_solution1
 
 
 
