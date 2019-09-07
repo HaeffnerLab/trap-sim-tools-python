@@ -23,9 +23,26 @@ def spher_harm_basis(r0, X, Y, Z, order):
     '''
     Computes spherical harmonics, just re-written matlab code
    
-    Returns: [Y00,Y-11,Y01,Y11,Y-22,Y-12,Y02,Y12,Y22...], rnorm
+    Returns: Yxx, rnorm
     where Yxx is a 1D array of the spherical harmonic evaluated on the grid
     rnorm is a normalization factor for the spherical harmonics
+
+    The function returns the coefficients in the order:[C00 C10 C11c C11s ]'
+    These correspond to the multipoles in cartesian coordinares: 
+    [c z -x -y (z^2-x^2/2-y^2/2) -3zx -3yz 3x^2-3y^2 6xy ... 15(3xy^2-x^3) 15(y^3-3yx^2)         ...]
+     1 2  3  4       5             6    7     8       9  ...       15           16          17   ...
+
+    Q(10)  0.5[2z^3-3(x^2+y^2)z]
+    Q(11) -1.5[4xz^2-x(x^2+y^2)]
+    Q(12) -1.5[4yz^2-(x^2+y^2)y]
+    Q(13)  15[z(x^2-y^2)]
+    Q(14)  30xyz
+    Q(15)  15(3xy^2-x^3)
+    Q(16)  15(y^3-3x^2y)
+
+    Or in terms of the Littich thesis:
+    M1 M3 M4 M2 M7 M8 M6 M9 M5 (Using the convention in G. Littich's master thesis (2011))
+    0  1  2  3  4  5  6  7  8  (the ith component of Q matrix)
     '''
 
     #initialize grid with expansion point (r0) at 0

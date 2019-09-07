@@ -2,7 +2,6 @@ import numpy as np
 from simulation import simulation
 import matplotlib.pyplot as plt
 
-
 ### EXAMPLE 
 
 ## (1) set up variables
@@ -25,7 +24,7 @@ s.import_data(path,ne,na,perm)
 #(3) expand the potential for each electrode to the given spherical harmonic order around the given position
 s.expand_field(position,order)
 
-#plot potentials & multipole coefficients
+#plot potentials
 fig,ax = plt.subplots(2,1)
 for n in range(len(s.electrode_positions)):
     ax[0].plot(s.Z,s.electrode_potentials[n][6][7],label = str(s.electrode_names[n]))
@@ -34,6 +33,16 @@ ax[0].legend()
 ax[1].legend()
 plt.show()
 
+#plot multipoles
+fig,ax = plt.subplots(9,1)
+for i in range(9):
+	Y = s.multipoles[:,i]
+	Y = Y.reshape(s.nx,s.ny,s.nz)
+	ax[i].imshow(Y[:,7,:])
+plt.title('z,x (axial,radial) slices of multipoles')
+plt.show()
+
+#plot multipole coefficients
 s.plot_multipoleCoeffs()
 
 #(4) remove U4,U5,U6
