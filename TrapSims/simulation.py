@@ -60,7 +60,6 @@ class simulation:
         Xi = trap['X'] #sandia defined coordinates
         Yi = trap['Y']
         Zi = trap['Z']
-        print np.array(Xi).shape
         #get everything into expected coordinates (described in project_paramters)
         coords = [Xi,Yi,Zi]
         X = coords[perm[0]]
@@ -261,7 +260,7 @@ class simulation:
             regularize = False
         if regularize:
             for i in range(M):
-                Cv = self.multipoleControl[:,i].T
+                Cv = self.multipoleControl[i].T
                 L = np.linalg.lstsq(K,Cv)
                 test = np.dot(K,L[0])
                 self.multipoleControl[i] = self.multipoleControl[i]-test
@@ -297,44 +296,62 @@ class simulation:
 
         return voltages
 
-    ###########################TO BE IMPLEMENTED #####################################
-    # def dcPotential(self):
-    #     # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
-    #     #### should add stray field.
-    #     for instance in self.instances:
-    #         if not instance['potential']:
-    #             potential = np.zeros((self.nx,self.ny,self.nz))
-    #             for i in range(self.numElectrodes):
-    #                 potential = potential + instance['voltages'][i]*self.electrode_potentials[i]
-    #             instance['potential'] = [potential]
-    #     return
+    ##########################TO BE IMPLEMENTED #####################################
+    def dcPotential(self,vs):
+        # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
+        #### should add stray field.
+        potential = np.zeros((self.nx,self.ny,self.nz))
+        for i in range(self.numElectrodes):
+                potential = np.add(potential,np.multiply(s.electrode_potentials[el],vs[el]))
+        self.vs = vs
+        self.dc_potential = potential
+        return
 
-    # def post_process(self):
-    #     # finds the secular frequencies, tilt angle, and position of the dc saddle point
-    #     dx = self.X[1]-self.X[0]
-    #     dy = self.Y[1]-self.Y[0]
-    #     dz = self.Z[1]-self.Z[0]
-    #     y, x, z = np.meshgrid(self.Y,self.X,self.Z)
+    def post_process(self,dcVoltages,Omega,RF_amplitude):
+        '''
+        inputs: 
+        dcVoltages = voltages to apply to each dc electrode (and RF if used in the simulation)
+        Omega = RF drive frequency
+        '''
+        # finds the secular frequencies, tilt angle, and position of the dc saddle point
+        self.dcPotential(dcVoltages)
 
-    #     [Ex_RF,Ey_RF,Ez_RF] = np.gradient(self.RF_potential,dx,dy,dz)
-    #     Esq_RF = Ex**2 + Ey**2 + Ez**2
-    #     [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
+        # find saddle points for RF potential and potentials given by dc voltages
+        [Xrf,Yrf,Zrf] = exact_saddle(self.RF_potential,self.X,self.Y,self.Z,2,self.expansion_point)
+        [Irf,Jrf,Krf] = find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,self.expansion_point)
+        [Xdc,Ydc,Zdc] = exact_saddle(self.dc_potential,self.X,self.Y,self.Z,3,self.expansion_point)
+        print 'RF saddle point:',Xrf,Yrf,Zrf
+        print 'DC saddle point:',Xdc,Ydc,Zdc
 
-    #     PseudoPhi = Esq*(self.charge**2)/(4*self.mass*self.Omega**2)
-    #     for instance in self.instances:
-    #         if not instance['U']:
-    #             [fx,fy,fz] = e.trapFrequencies
-    #             U = PseudoPhi + self.charge*instance['potential']
-    #             instance['U'] = U
-    #             Uxy = U[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]
-    #             maxU = np.amax(Uxy)
-    #             Uxy = Uxy/MU
-    #             dl = dx*5 ## not sure why this scaling exists.
-    #             xr = (self.X[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.X[Irf,Jrf,Krf])/dl
-    #             yr = (self.Y[Irf-5:Irf+5,Jrf-5:Jrf+5,Krf]-self.Y[Irf,Jrf,Krf])/dl
-    #             C1,C2,theta = p2d(Uxy,xr,yr)
-    #             instance['fx'] = 1e3*np.sqrt
-    #             instance
+        #find pseudopotential
+        dx = self.X[1]-self.X[0]
+        dy = self.Y[1]-self.Y[0]
+        dz = self.Z[1]-self.Z[0]
+
+        [Ex_rf,Ey_rf,Ez_rf] = np.gradient(self.RF_potential*RF_amplitude,dx,dy,dz)
+        Esq = np.add(np.multiply(Ex_rf,Ex_rf),np.multiply(Ey_rf,Ey_rf),np.multiply(Ez_rf,Ez_rf))
+        self.pseudo_potential = self.charge**2*Esq/(4*self.mass*Omega**2)
+
+        #find total potential
+        self.tot_potential = self.pseudo_potential + self.charge*self.dc_potential
+
+        #find radial trap frequencies & tilt
+        Uxy = self.tot_potential(Irf-3:Irf+3,Jrf-3:Jrf+3,Krf)
+        MU = np.amax(Uxy)
+        Uxy_norm = Uxy/MU
+        dL = self.X(Irf+3,Jrf,Krf)-self.X(Irf,Jrf,Krf)
+        xr = (self.X(Irf-3:Irf+3,Jrf-3:Jrf+3,Krf) - self.X(Irf,Jrf,Krf))/dL
+        yr = (self.Y(Irf-3:Irf+3,Jrf-3:Jrf+3,Krf) - self.Y(Irf,Jrf,Krf))/dL
+        [C1,C2,theta] = p2d(Uxy_norm,xr,yr)
+        fx = (1e3/dL)*np.sqrt(2*C1*MU/self.mass)/(2*np.pi)
+        fy = (1e3/dL)*np.sqrt(2*C2*MU/self.mass)/(2*np.pi)
+
+        #find axial trap frequency
+        
+
+
+
+
 
 
     def plot_multipoleCoeffs(self):

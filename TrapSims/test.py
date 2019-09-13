@@ -51,7 +51,7 @@ usedMultipoles[0:6] = np.ones(6)
 s.set_used_multipoles(usedMultipoles)
 
 #(5) invert the expansion from (3) to get the multipole control matrix
-s.multipole_control(False)
+s.multipole_control(True)
 
 print s.multipoleControl
 

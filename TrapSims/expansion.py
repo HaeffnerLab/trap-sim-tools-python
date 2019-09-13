@@ -165,10 +165,10 @@ def compute_multipoles(grad,hessian):
     return multipoles
 
 def nullspace(A,eps=1e-15):
-    u,s,vh = scipy.linalg.svd(A)
-    null_mask = (s <= eps)
-    null_space = scipy.compress(null_mask, vh, axis=0)
-    return scipy.transpose(null_space)
+    u,s,vh = np.linalg.svd(A)
+    nnz = (s >= eps).sum()
+    null_space = vh[nnz:].conj().T
+    return null_space
 
 def p2d(V,x,y):
     #fit a 2d polynomial to the potential in V
