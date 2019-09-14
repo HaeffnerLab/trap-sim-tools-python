@@ -249,7 +249,7 @@ class simulation:
         for i in range(M):
             B = np.zeros(M)
             B[i] = 1
-            A = np.linalg.lstsq(self.multipole_expansions,B)
+            A = np.linalg.lstsq(self.multipole_expansions,B,rcond=None)
             self.multipoleControl.append(A[0])
         #check nullspace & regularize if necessary
         if M < E:
@@ -261,7 +261,7 @@ class simulation:
         if regularize:
             for i in range(M):
                 Cv = self.multipoleControl[i].T
-                L = np.linalg.lstsq(K,Cv)
+                L = np.linalg.lstsq(K,Cv,rcond=None)
                 test = np.dot(K,L[0])
                 self.multipoleControl[i] = self.multipoleControl[i]-test
         
@@ -296,13 +296,11 @@ class simulation:
 
         return voltages
 
-    ##########################TO BE IMPLEMENTED #####################################
     def dcPotential(self,vs):
-        # calculates the dc potential given the applied voltages for all instances that don't have a dcpotential yet. 
-        #### should add stray field.
+        # calculates the dc potential given the applied voltages
         potential = np.zeros((self.nx,self.ny,self.nz))
         for i in range(self.numElectrodes):
-                potential = np.add(potential,np.multiply(s.electrode_potentials[el],vs[el]))
+                potential = np.add(potential,np.multiply(self.electrode_potentials[i],vs[i]))
         self.vs = vs
         self.dc_potential = potential
         return
@@ -312,48 +310,53 @@ class simulation:
         inputs: 
         dcVoltages = voltages to apply to each dc electrode (and RF if used in the simulation)
         Omega = RF drive frequency
+
+        finds the secular frequencies
         '''
-        # finds the secular frequencies, tilt angle, and position of the dc saddle point
+
         self.dcPotential(dcVoltages)
 
         # find saddle points for RF potential and potentials given by dc voltages
-        [Xrf,Yrf,Zrf] = exact_saddle(self.RF_potential,self.X,self.Y,self.Z,2,self.expansion_point)
-        [Irf,Jrf,Krf] = find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,self.expansion_point)
-        [Xdc,Ydc,Zdc] = exact_saddle(self.dc_potential,self.X,self.Y,self.Z,3,self.expansion_point)
-        print 'RF saddle point:',Xrf,Yrf,Zrf
-        print 'DC saddle point:',Xdc,Ydc,Zdc
+        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
 
         #find pseudopotential
         dx = self.X[1]-self.X[0]
         dy = self.Y[1]-self.Y[0]
         dz = self.Z[1]-self.Z[0]
 
-        [Ex_rf,Ey_rf,Ez_rf] = np.gradient(self.RF_potential*RF_amplitude,dx,dy,dz)
+        [Ex_rf,Ey_rf,Ez_rf] = np.gradient(self.RF_potential,dx,dy,dz)
         Esq = np.add(np.multiply(Ex_rf,Ex_rf),np.multiply(Ey_rf,Ey_rf),np.multiply(Ez_rf,Ez_rf))
-        self.pseudo_potential = self.charge**2*Esq/(4*self.mass*Omega**2)
+        self.pseudo_potential = self.charge*Esq/(4*self.mass*Omega**2)
 
         #find total potential
-        self.tot_potential = self.pseudo_potential + self.charge*self.dc_potential
+        self.tot_potential = np.add(self.pseudo_potential,np.multiply(self.charge,self.dc_potential))
 
-        #find radial trap frequencies & tilt
-        Uxy = self.tot_potential(Irf-3:Irf+3,Jrf-3:Jrf+3,Krf)
-        MU = np.amax(Uxy)
-        Uxy_norm = Uxy/MU
-        dL = self.X(Irf+3,Jrf,Krf)-self.X(Irf,Jrf,Krf)
-        xr = (self.X(Irf-3:Irf+3,Jrf-3:Jrf+3,Krf) - self.X(Irf,Jrf,Krf))/dL
-        yr = (self.Y(Irf-3:Irf+3,Jrf-3:Jrf+3,Krf) - self.Y(Irf,Jrf,Krf))/dL
-        [C1,C2,theta] = p2d(Uxy_norm,xr,yr)
-        fx = (1e3/dL)*np.sqrt(2*C1*MU/self.mass)/(2*np.pi)
-        fy = (1e3/dL)*np.sqrt(2*C2*MU/self.mass)/(2*np.pi)
-
+        #find trap frequencies 
+        #slice in x direction
+        Ux = self.tot_potential[Irf-5:Irf+5,Jrf,Krf]
+        print Ux
+        x = self.X[Irf-5:Irf+5]
+        a = np.polyfit(x,Ux,2)
+        print a
+        self.fx = 1e-6*np.sqrt(2*a[0]/self.mass)/(2*np.pi)
+        #slice in y direction
+        Uy = self.tot_potential[Irf,Jrf-5:Jrf+5,Krf]
+        y = self.Y[Jrf-5:Jrf+5]
+        b = np.polyfit(y,Uy,2)
+        print b
+        self.fy = 1e-6*np.sqrt(2*abs(b[0])/self.mass)/(2*np.pi)
         #find axial trap frequency
-        
+        Uz = self.tot_potential[Irf,Jrf,Krf-5:Krf+5]
+        z = self.Z[Krf-5:Krf+5]
+        c = np.polyfit(z,Uz,2)
+        self.fz = 1e-6*np.sqrt(2*c[0]/self.mass)/(2*np.pi)
+        print 'radial trap frequencies: ',self.fx, self.fy
+        print 'axial trap frequency: ',self.fz
+
+       	return
 
 
-
-
-
-
+    ### plotting helper functions
     def plot_multipoleCoeffs(self):
         #plots the multipole coefficients for each electrode
         fig,ax = plt.subplots(1,1)

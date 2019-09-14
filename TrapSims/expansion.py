@@ -108,7 +108,7 @@ def spher_harm_expansion(potential_grid, r0, X, Y, Z, order):
     Yj, scale = spher_harm_basis(r0,X,Y,Z,order)
     #Yj, rnorm = spher_harm_basis_v2(r0, X, Y, Z, order)
 
-    Mj=np.linalg.lstsq(Yj,W) 
+    Mj=np.linalg.lstsq(Yj,W,rcond=None) 
     Mj=Mj[0] # array of coefficients
 
     # rescale to original units
