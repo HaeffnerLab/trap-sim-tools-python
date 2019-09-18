@@ -29,8 +29,9 @@ def spher_harm_basis(r0, X, Y, Z, order):
 
     The function returns the coefficients in the order:[C00 C10 C11c C11s ]'
     These correspond to the multipoles in cartesian coordinares: 
-    [c z -x -y (z^2-x^2/2-y^2/2) -3zx -3yz 3x^2-3y^2 6xy ... 15(3xy^2-x^3) 15(y^3-3yx^2)         ...]
-     1 2  3  4       5             6    7     8       9  ...       15           16          17   ...
+    # Sep 18 added a factor 2 to the normalization of U5,U4,U1, U3
+    [c z -x -y (z^2-x^2/2-y^2/2) -2*3zx -2*3yz 2*(3x^2-3y^2) 2*6xy ... 15(3xy^2-x^3) 15(y^3-3yx^2)         ...]
+     1 2  3  4       5             6       7       8          9  ...       15           16          17   ...
 
     Q(10)  0.5[2z^3-3(x^2+y^2)z]
     Q(11) -1.5[4xz^2-x(x^2+y^2)]
