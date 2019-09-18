@@ -35,15 +35,22 @@ plt.show()
 
 #plot multipoles
 fig,ax = plt.subplots(9,1)
+fig.suptitle('z,x (axial,radial) slices of multipoles')
 for i in range(9):
 	Y = s.multipoles[:,i]
 	Y = Y.reshape(s.nx,s.ny,s.nz)
 	ax[i].imshow(Y[:,7,:])
-plt.title('z,x (axial,radial) slices of multipoles')
 plt.show()
 
-#plot multipole coefficients
-s.plot_multipoleCoeffs()
+#plot multipole coefficients for 19,20,39,40
+v1 = np.zeros(ne)
+vs = []
+for i in [1,3,9,10]:
+	v = v1.copy()
+	v[i] = 1
+	vs.append(v.copy())
+print vs
+s.plot_multipoleCoeffs(vs,[s.electrode_names[i] for i in [1,3,9,10]])
 
 #(4) remove U4,U5,U6
 usedMultipoles = np.zeros((s.expansion_order+1)**2)
@@ -71,3 +78,9 @@ vs_solution1[10] = -1
 vs_solution1[9] = -0.919
 coeffs_solution1 = np.dot(s.multipole_expansions,vs_solution1)
 print coeffs_solution1
+
+ey_solution = np.zeros(ne)
+ey_solution[1] = -0.777
+ey_solution[9] = -0.775
+coeffs_ey = np.dot(s.multipole_expansions,ey_solution)
+print coeffs_ey

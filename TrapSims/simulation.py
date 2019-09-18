@@ -12,6 +12,7 @@ import pickle
 import optimsaddle as o
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from scipy.optimize import curve_fit
 
 class simulation:
 
@@ -112,8 +113,9 @@ class simulation:
         return
 
 
-    def expand_potentials_spherHarm(self):
+    def expand_potentials_spherHarm(self,ROI=None):
         '''
+        ROI = region to expand the potential around. 
         Computes a multipole expansion of every electrode around the specified value expansion_point to the specified order.
         Defines the class variables:
         (1) self.multipole_expansions [:, el] = multipole expansion vector for electrode el
@@ -141,26 +143,48 @@ class simulation:
         N = (self.expansion_order + 1)**2 # number of multipoles for expansion (might be less than for regeneration)
         order = self.expansion_order
 
-        self.multipole_expansions = np.zeros((N, self.numElectrodes))
-        self.electrode_potentials_regenerated = np.zeros(np.array(self.electrode_potentials).shape)
+        if ROI == None:
+        	self.nx_trunc = self.nx
+        	self.ny_trunc = self.ny
+        	self.nz_trunc = self.nz
+        	self.X_trunc = self.X
+        	self.Y_trunc = self.Y
+        	self.Z_trunc = self.Z
+        else:
+    	    self.X_trunc = self.X[self.expansion_coords[0]-ROI[0]:self.expansion_coords[0]+ROI[0]]
+    	    self.Y_trunc = self.Y[self.expansion_coords[1]-ROI[1]:self.expansion_coords[1]+ROI[1]]
+    	    self.Z_trunc = self.Z[self.expansion_coords[2]-ROI[2]:self.expansion_coords[2]+ROI[2]]
+    	    self.nx_trunc = ROI[0]*2
+    	    self.ny_trunc = ROI[1]*2
+    	    self.nz_trunc = ROI[2]*2
 
-        X, Y, Z = self.X, self.Y, self.Z
+        self.multipole_expansions = np.zeros((N, self.numElectrodes))
+        self.electrode_potentials_regenerated = np.zeros([self.numElectrodes,self.nx_trunc,self.ny_trunc,self.nz_trunc])
 
         for el in range(self.numElectrodes):
 
             #multipole expansion
-            potential_grid = self.electrode_potentials[el]
-            Mj,Yj,scale = e.spher_harm_expansion(potential_grid, self.expansion_point, X, Y, Z, order)
+            if ROI == None:
+            	potential_grid = self.electrode_potentials[el]
+
+            else:
+            	potential_grid = self.electrode_potentials[el][self.expansion_coords[0]-ROI[0]:self.expansion_coords[0]+ROI[0],
+            												self.expansion_coords[1]-ROI[1]:self.expansion_coords[1]+ROI[1],
+            												self.expansion_coords[2]-ROI[2]:self.expansion_coords[2]+ROI[2]]
+
+
+            Mj,Yj,scale = e.spher_harm_expansion(potential_grid, self.expansion_point, self.X_trunc, self.Y_trunc, self.Z_trunc, order)
             self.multipole_expansions[:, el] = Mj[0:N].T
 
             #regenerated field
+            
             Vregen = e.spher_harm_cmp(Mj,Yj,scale,order)
-            self.electrode_potentials_regenerated[el] = Vregen.reshape([self.nx,self.ny,self.nz])
+            self.electrode_potentials_regenerated[el] = Vregen.reshape([self.nx_trunc,self.ny_trunc,self.nz_trunc])
+
 
             if self.electrode_names[el] == 'RF':
                 self.RF_multipole_expansion = Mj[0:N].T
         self.multipoles = Yj
-
         return
 
     def rf_saddle (self):
@@ -184,12 +208,12 @@ class simulation:
 
         return
 
-    def expand_field(self,expansion_point,expansion_order):
+    def expand_field(self,expansion_point,expansion_order,ROI=None):
 
         self.expansion_point = expansion_point
         self.expansion_order = expansion_order
         self.rf_saddle()
-        self.expand_potentials_spherHarm()
+        self.expand_potentials_spherHarm(ROI)
 
         return
 
@@ -300,71 +324,64 @@ class simulation:
         # calculates the dc potential given the applied voltages
         potential = np.zeros((self.nx,self.ny,self.nz))
         for i in range(self.numElectrodes):
-                potential = np.add(potential,np.multiply(self.electrode_potentials[i],vs[i]))
-        self.vs = vs
+                potential = potential + self.electrode_potentials[i]*vs[i]
         self.dc_potential = potential
         return
 
-    def post_process(self,dcVoltages,Omega,RF_amplitude):
+    def regenPotential(self,vs):
+    	#calculates the approximate dc potential using the regenerated potentials from the harmonic expansion
+    	potential = np.zeros((self.nx_trunc,self.ny_trunc,self.nz_trunc))
+        for i in range(self.numElectrodes):
+        	potential = potential + self.electrode_potentials_regenerated[i]*vs[i]
+        self.regen_potential = potential
+        return
+
+    def post_process(self,potential,Omega,RF_amplitude, trunc = False, ROI=None):
         '''
         inputs: 
         dcVoltages = voltages to apply to each dc electrode (and RF if used in the simulation)
         Omega = RF drive frequency
+        ROI = number of points to consider to left and right of the center point
 
         finds the secular frequencies
         '''
 
-        self.dcPotential(dcVoltages)
+        [Irf,Jrf,Krf] = self.expansion_coords
 
-        # find saddle points for RF potential and potentials given by dc voltages
-        [Irf,Jrf,Krf] = o.find_saddle(self.RF_potential,self.X,self.Y,self.Z,2,Z0=self.expansion_point[2])
-
-        #find pseudopotential
-        dx = self.X[1]-self.X[0]
-        dy = self.Y[1]-self.Y[0]
-        dz = self.Z[1]-self.Z[0]
-
-        [Ex_rf,Ey_rf,Ez_rf] = np.gradient(self.RF_potential,dx,dy,dz)
-        Esq = np.add(np.multiply(Ex_rf,Ex_rf),np.multiply(Ey_rf,Ey_rf),np.multiply(Ez_rf,Ez_rf))
-        self.pseudo_potential = self.charge*Esq/(4*self.mass*Omega**2)
-
-        #find total potential
-        self.tot_potential = np.add(self.pseudo_potential,np.multiply(self.charge,self.dc_potential))
-
-        #find trap frequencies 
-        #slice in x direction
-        Ux = self.tot_potential[Irf-5:Irf+5,Jrf,Krf]
-        print Ux
-        x = self.X[Irf-5:Irf+5]
-        a = np.polyfit(x,Ux,2)
-        print a
-        self.fx = 1e-6*np.sqrt(2*a[0]/self.mass)/(2*np.pi)
-        #slice in y direction
-        Uy = self.tot_potential[Irf,Jrf-5:Jrf+5,Krf]
-        y = self.Y[Jrf-5:Jrf+5]
-        b = np.polyfit(y,Uy,2)
-        print b
-        self.fy = 1e-6*np.sqrt(2*abs(b[0])/self.mass)/(2*np.pi)
         #find axial trap frequency
-        Uz = self.tot_potential[Irf,Jrf,Krf-5:Krf+5]
-        z = self.Z[Krf-5:Krf+5]
+        if trunc == True:
+        	z = self.Z_trunc
+        else:
+        	z = self.Z
+        if ROI == None:
+        	Uz = potential[Irf,Jrf,:]
+        else:
+        	Uz = potential[Irf,Jrf,Krf-ROI:Krf+ROI]
+        	z = z[Krf-ROI:Krf+ROI]
         c = np.polyfit(z,Uz,2)
-        self.fz = 1e-6*np.sqrt(2*c[0]/self.mass)/(2*np.pi)
-        print 'radial trap frequencies: ',self.fx, self.fy
-        print 'axial trap frequency: ',self.fz
+        self.fz = 1e-12*np.sqrt(2*c[0]/self.mass)/(2*np.pi) # in MHz
+        print 'axial trap frequency: ',self.fz, 'MHz'
 
-       	return
+       	return self.fz
 
 
     ### plotting helper functions
-    def plot_multipoleCoeffs(self):
+    def plot_multipoleCoeffs(self,vs,names = None):
         #plots the multipole coefficients for each electrode
-        fig,ax = plt.subplots(1,1)
-        Nelec = self.numElectrodes
+        multipole_names = ['C','Ez (axial)','Ex (radial)', 'Ey (height)',r'U2=z^2-(x^2+y^2)/2',
+        					'U5=-3zx', 'U4=-3yz', r'U1=3(x^2-y^2)', 'U3=6xy']
+
         Nmulti = len(self.multipole_expansions)
-        for n in range(Nelec):
-                ax.plot(range(Nmulti),self.multipole_expansions[:,n],'x',label = str(self.electrode_names[n]))
-        ax.legend()
+
+        if names == None:
+        	names = np.zeros(len(vs))
+
+        fig,ax = plt.subplots(len(vs),1,figsize = (10,20))
+        for i,v in enumerate(vs):
+        	coeffs = np.dot(self.multipole_expansions,v)
+        	ax[i].bar(range(Nmulti),coeffs)
+        	ax[i].set_title(names[i])
+        plt.xticks(range(Nmulti), multipole_names, rotation = -90)
         plt.show()
         return
 
