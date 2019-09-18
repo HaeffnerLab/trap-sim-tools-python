@@ -359,11 +359,10 @@ class simulation:
         	Uz = potential[Irf,Jrf,Krf-ROI:Krf+ROI]
         	z = z[Krf-ROI:Krf+ROI]
         c = np.polyfit(z,Uz,2)
-        self.fz = 1e-12*np.sqrt(2*c[0]/self.mass)/(2*np.pi) # in MHz
+        self.fz = 1e-6*np.sqrt(2*c[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
         print 'axial trap frequency: ',self.fz, 'MHz'
 
        	return self.fz
-
 
     ### plotting helper functions
     def plot_multipoleCoeffs(self,vs,names = None):
