@@ -123,16 +123,8 @@ class simulation:
 
         The function returns the coefficients in the order:[C00 C10 C11c C11s ]'
         These correspond to the multipoles in cartesian coordinares: 
-        [c z -x -y (z^2-x^2/2-y^2/2) -3zx -3yz 3x^2-3y^2 6xy ... 15(3xy^2-x^3) 15(y^3-3yx^2)         ...]
-         1 2  3  4       5             6    7     8       9  ...       15           16          17   ...
-
-        Q(10)  0.5[2z^3-3(x^2+y^2)z]
-        Q(11) -1.5[4xz^2-x(x^2+y^2)]
-        Q(12) -1.5[4yz^2-(x^2+y^2)y]
-        Q(13)  15[z(x^2-y^2)]
-        Q(14)  30xyz
-        Q(15)  15(3xy^2-x^3)
-        Q(16)  15(y^3-3x^2y)
+        [c z -x -y (z^2-x^2/2-y^2/2) -6zx -6yz 6x^2-6y^2 12xy ...
+         1 2  3  4       5             6    7     8       9  ...
 
         Or in terms of the Littich thesis:
         M1 M3 M4 M2 M7 M8 M6 M9 M5 (Using the convention in G. Littich's master thesis (2011))
@@ -336,33 +328,51 @@ class simulation:
         self.regen_potential = potential
         return
 
-    def post_process(self,potential,Omega,RF_amplitude, trunc = False, ROI=None):
+    def post_process(self,vs,Omega,RF_amplitude, trunc = False, ROI=None):
         '''
         inputs: 
         dcVoltages = voltages to apply to each dc electrode (and RF if used in the simulation)
         Omega = RF drive frequency
         ROI = number of points to consider to left and right of the center point
 
-        finds the secular frequencies
+        finds the axial frequency of the actual potential, the regenerated potential, and from the U2 component directly.
         '''
+
+        self.dcPotential(vs)
+        self.regenPotential(vs)
 
         [Irf,Jrf,Krf] = self.expansion_coords
 
-        #find axial trap frequency
+        #find axial trap frequency from exact potential & regnerated potential
         if trunc == True:
         	z = self.Z_trunc
         else:
         	z = self.Z
         if ROI == None:
-        	Uz = potential[Irf,Jrf,:]
+            Uz_dc = self.dc_potential[Irf,Jrf,:]
+            Uz_regen = self.regen_potential[Irf,Jrf,:]
         else:
-        	Uz = potential[Irf,Jrf,Krf-ROI:Krf+ROI]
-        	z = z[Krf-ROI:Krf+ROI]
-        c = np.polyfit(z,Uz,2)
-        self.fz = 1e-6*np.sqrt(2*c[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
-        print 'axial trap frequency: ',self.fz, 'MHz'
+            Uz_dc = self.dc_potential[Irf,Jrf,Krf-ROI:Krf+ROI]
+            Uz_regen = self.regen_potential[Irf,Jrf,Krf-ROI:Krf+ROI]
+            z = z[Krf-ROI:Krf+ROI]
 
-       	return self.fz
+        c_dc = np.polyfit(z,Uz_dc,2)
+        self.fz_dc = 1e-6*np.sqrt(2*c_dc[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
+        print 'actual axial trap frequency: ',self.fz_dc, 'MHz'
+
+
+        #c_regen = np.polyfit(self.Z_trunc,Uz_regen,2)
+        #self.fz_regen = 1e-6*np.sqrt(2*c_regen[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
+        #print 'axial trap frequency of regenerated potential: ',self.fz_regen, 'MHz'
+
+        #find axial trap frequency via U2 coefficient 
+        ## write now this is hard coded because I know U2 is the 3rd coefficient
+        coeffs = np.dot(self.multipole_expansions,vs)
+        self.fz_multipole = 1e-6*np.sqrt(2*coeffs[3]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
+        print 'axial trap frequency as determined by U2 coefficient: ', self.fz_multipole, 'MHz'
+
+
+       	return self.fz_dc
 
     ### plotting helper functions
     def plot_multipoleCoeffs(self,vs,names = None):
