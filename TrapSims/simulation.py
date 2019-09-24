@@ -283,24 +283,27 @@ class simulation:
         
         return
 
-    def print_cFile(self, pad = 0, fName=None):
+    def print_cFile(self, fName=None):
         '''
         prints the current c file to a file for labrad to use, 
             just a text file with a single column with (# rows) = (# electrodes)*(# multipoles) 
 
         takes an optional file name, otherwise just saves it as Cfile.txt
 
-        pad is the number of extra 0s for electrodes that are connected at the dac but considered in the simulation.
-            this should not be necessary after set_controlled_electrodes is correctly implemented
+        PRINTS THEM OUT IN ALPHABETICAL ORDER (THIS IS HOW NEW DAC CONTROL TAKES THE NAMES)
+
         '''
         if fName == None:
             fName = 'Cfile.txt'
         f = open(fName,'w')
-        pad = np.zeros(pad)
-        for i in range(len(self.multipoleControl)):
-            np.savetxt(f, self.multipoleControl[i], delimiter=",")
-            np.savetxt(f, pad, delimiter=",")
         print self.electrode_names
+        indices = np.argsort(self.electrode_names)
+        print indices
+        mC = np.array(self.multipoleControl)
+        for j in range(len(self.multipoleControl)):
+            for i in indices:
+                print self.electrode_names[i]
+                np.savetxt(f, [mC[j,i]], delimiter=",")
         f.close()
 
         return
