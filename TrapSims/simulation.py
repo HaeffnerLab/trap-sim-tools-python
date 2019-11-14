@@ -275,6 +275,8 @@ class simulation:
             K = None
             regularize = False
         if regularize:
+            #should be implemented better if anyone actually needs it.
+            print 'CAUTION: REGULARIZATION DOESNT ACTUALLY DO ANYTHING'
             for i in range(M):
                 Cv = self.multipoleControl[i].T
                 L = np.linalg.lstsq(K,Cv,rcond=None)
@@ -296,16 +298,12 @@ class simulation:
         if fName == None:
             fName = 'Cfile.txt'
         f = open(fName,'w')
-        print self.electrode_names
         indices = np.argsort(self.electrode_names)
-        print indices
         mC = np.array(self.multipoleControl)
         for j in range(len(self.multipoleControl)):
             for i in indices:
-                print self.electrode_names[i]
                 np.savetxt(f, [mC[j,i]], delimiter=",")
         f.close()
-
         return
 
     def setVoltages(self,coeffs,name = None):
@@ -363,11 +361,6 @@ class simulation:
         self.fz_dc = 1e-6*np.sqrt(2*c_dc[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
         print 'actual axial trap frequency: ',self.fz_dc, 'MHz'
 
-
-        #c_regen = np.polyfit(self.Z_trunc,Uz_regen,2)
-        #self.fz_regen = 1e-6*np.sqrt(2*c_regen[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
-        #print 'axial trap frequency of regenerated potential: ',self.fz_regen, 'MHz'
-
         #find axial trap frequency via U2 coefficient 
         ## write now this is hard coded because I know U2 is the 3rd coefficient
         coeffs = np.dot(self.multipole_expansions,vs)
@@ -399,12 +392,15 @@ class simulation:
 
     def plot_trapV(self,V,title=None):
         #plots trap voltages (V) (e.g. for each multipole, or for final trapping configuration)
-        fig,ax  = plt.subplots(1,1)
+        fig,ax  = plt.subplots(1,1,figsize = [4,5])
         xpos = [p[0] for p in self.electrode_positions]
         ypos = [p[1] for p in self.electrode_positions]
-        plot = ax.scatter(xpos, ypos, 500, V)
+        plot = ax.scatter(xpos, ypos, 700, V)
         fig.colorbar(plot)
         plt.title(title)
+        plt.axis('off')
+        plt.xlim(min(xpos)-100,max(xpos)+100)
+        plt.ylim(min(ypos)-1,max(ypos)+1)
         plt.show()
         return
 
