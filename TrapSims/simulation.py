@@ -9,6 +9,7 @@ resuls from BEMSolver simulations.
 import numpy as np
 import expansion as e
 import pickle
+import json
 import optimsaddle as o
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -29,7 +30,7 @@ class simulation:
 
     def import_data(self, path, numElectrodes, na, perm):
         '''
-        path: file path to the potential data. This should be a .pkl file containing a dictionary with the following keys:
+        path: file path to the potential data. This should be a .pkl or a .json file containing a dictionary with the following keys:
             trap['X'] = X values 
             trap['Y'] = Y values
             trap['Z'] = Z values
@@ -51,12 +52,22 @@ class simulation:
         
         adds to self X, Y, Z axes, name, position, and potentials for each electrode, max & min electrode position for used electrodes
         '''
-        try:
-            f = open(path,'rb')
-        except IOError:
-            print 'ERROR: No pickle file found.'
-            return
-        trap = pickle.load(f)
+        
+        if '.pkl' in path:
+            try:
+                f = open(path,'rb')
+            except IOError:
+                print ('ERROR: No pickle file found.')
+                return
+            trap = pickle.load(f)
+        elif '.json' in path:
+            try:
+                with open(path, 'r') as json_file:
+                    trap_jason = json_file.read()
+            except IOError:
+                print ('ERROR: No json file found.')
+                return
+            trap = json.loads(trap_jason)
 
         Xi = trap['X'] #sandia defined coordinates
         Yi = trap['Y']
@@ -67,25 +78,26 @@ class simulation:
         Y = coords[perm[1]]
         Z = coords[perm[2]]
 
-        self.X, self.Y, self.Z = X,Y,Z
+        self.X, self.Y, self.Z = np.array(X), np.array(Y),np.array(Z)
         self.nx, self.ny, self.nz = len(X), len(Y), len(Z)
         
         self.numElectrodes = numElectrodes
 
-        #truncate axial direction to only care about part that is spanned by electrodes
-        pos = []
-        for key in trap['electrodes']:
-            p = trap['electrodes'][key]['position']
-            pos.append(p)
-        xs = [p[0] for p in pos]
-        self.Z_max = max(xs)/1000.0
-        self.Z_min = min(xs)/1000.0
+        if '.pkl' in path: # should be used for the HOA trap!
+            # truncate axial direction to only care about part that is spanned by electrodes
+            pos = []
+            for key in trap['electrodes']:
+                p = trap['electrodes'][key]['position']
+                pos.append(p)
+            xs = [p[0] for p in pos]
+            self.Z_max = max(xs)/1000.0
+            self.Z_min = min(xs)/1000.0
 
-        I_max = np.abs(Z-self.Z_max).argmin() + 20
+            I_max = np.abs(Z-self.Z_max).argmin() + 20
 
-        I_min = np.abs(Z-self.Z_min).argmin() - 20
-        self.Z = self.Z[I_min:I_max]
-        self.nz = I_max-I_min
+            I_min = np.abs(Z-self.Z_min).argmin() - 20
+            self.Z = self.Z[I_min:I_max]
+            self.nz = I_max-I_min
 
         self.npts = self.nx*self.ny*self.nz
 
@@ -94,10 +106,11 @@ class simulation:
         self.electrode_positions = []
 
         for key in trap['electrodes']:
-            Vs = trap['electrodes'][key]['V']
+            Vs = np.array(trap['electrodes'][key]['V'])
             Vs = Vs.reshape(na[0],na[1],na[2])
             Vs = np.transpose(Vs,perm)
-            Vs = Vs[:,:,I_min:I_max]
+            if '.pkl' in path: #HOA trap
+                Vs = Vs[:,:,I_min:I_max]
 
             if trap['electrodes'][key]['name'] == 'RF':
                 self.RF_potential = Vs
@@ -242,7 +255,7 @@ class simulation:
         ## keep only the multipoles used
         ## used_multipoles is a list of 0 or 1 the length of the # of multipoles
         if len(self.multipole_expansions) == 0:
-            print "ERROR: must expand the potential first"
+            print ("ERROR: must expand the potential first")
             return
 
         used_multipoles = []
@@ -257,7 +270,7 @@ class simulation:
         ## inverts the multipole coefficient array to get the multipole controls
         ## (e.g. voltages)
         if len(self.multipole_expansions) == 0:
-            print "ERROR: must expand the potential first"
+            print ("ERROR: must expand the potential first")
             return
         M = len(self.multipole_expansions)
         E = len(self.electrode_potentials)
@@ -271,12 +284,12 @@ class simulation:
         if M < E:
             K = e.nullspace(self.multipole_expansions)
         else:
-            print 'There is no nullspace because the coefficient matrix is rank deficient. \n There can be no regularization.'
+            print ('There is no nullspace because the coefficient matrix is rank deficient. \n There can be no regularization.')
             K = None
             regularize = False
         if regularize:
             #should be implemented better if anyone actually needs it.
-            print 'CAUTION: REGULARIZATION DOESNT ACTUALLY DO ANYTHING'
+            print ('CAUTION: REGULARIZATION DOESNT ACTUALLY DO ANYTHING')
             for i in range(M):
                 Cv = self.multipoleControl[i].T
                 L = np.linalg.lstsq(K,Cv,rcond=None)
@@ -299,7 +312,9 @@ class simulation:
             fName = 'Cfile.txt'
         f = open(fName,'w')
         indices = np.argsort(self.electrode_names)
+        print (indices)
         mC = np.array(self.multipoleControl)
+        print (mC)
         for j in range(len(self.multipoleControl)):
             for i in indices:
                 np.savetxt(f, [mC[j,i]], delimiter=",")
@@ -307,7 +322,7 @@ class simulation:
         return
 
     def setVoltages(self,coeffs,name = None):
-        # takes a set of desired multipole coefficients and returns the voltages needed to acheive that.
+        # takes a set of desired multipole coefficients and returns the voltages needed to achieve that.
         # creates an instance that will be used to save trap attributes for different configurations
         voltages = np.dot(np.array(self.multipoleControl).T,coeffs)
 
@@ -322,10 +337,10 @@ class simulation:
         return
 
     def regenPotential(self,vs):
-    	#calculates the approximate dc potential using the regenerated potentials from the harmonic expansion
-    	potential = np.zeros((self.nx_trunc,self.ny_trunc,self.nz_trunc))
+        # calculates the approximate dc potential using the regenerated potentials from the harmonic expansion
+        potential = np.zeros((self.nx_trunc,self.ny_trunc,self.nz_trunc))
         for i in range(self.numElectrodes):
-        	potential = potential + self.electrode_potentials_regenerated[i]*vs[i]
+            potential = potential + self.electrode_potentials_regenerated[i]*vs[i]
         self.regen_potential = potential
         return
 
@@ -359,13 +374,13 @@ class simulation:
 
         c_dc = np.polyfit(z,Uz_dc,2)
         self.fz_dc = 1e-6*np.sqrt(2*c_dc[0]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
-        print 'actual axial trap frequency: ',self.fz_dc, 'MHz'
+        print ('actual axial trap frequency: ',self.fz_dc, 'MHz')
 
         #find axial trap frequency via U2 coefficient 
         ## write now this is hard coded because I know U2 is the 3rd coefficient
         coeffs = np.dot(self.multipole_expansions,vs)
         self.fz_multipole = 1e-6*np.sqrt(2*coeffs[3]*1e6*self.charge/self.mass)/(2*np.pi) # in MHz
-        print 'axial trap frequency as determined by U2 coefficient: ', self.fz_multipole, 'MHz'
+        print ('axial trap frequency as determined by U2 coefficient: ', self.fz_multipole, 'MHz')
 
 
        	return self.fz_dc
@@ -383,9 +398,11 @@ class simulation:
 
         fig,ax = plt.subplots(len(vs),1,figsize = (10,20))
         for i,v in enumerate(vs):
-        	coeffs = np.dot(self.multipole_expansions,v)
-        	ax[i].bar(range(Nmulti),coeffs)
-        	ax[i].set_title(names[i])
+            coeffs = np.dot(self.multipole_expansions,v)
+            print (coeffs)
+            ax[i].bar(range(Nmulti),np.abs(coeffs))
+            ax[i].set_title(names[i])
+            ax[i].set_yscale('log')
         plt.xticks(range(Nmulti), multipole_names, rotation = -90)
         plt.show()
         return
