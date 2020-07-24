@@ -39,6 +39,9 @@ class simulation:
                 trap['electrodes']['Q14'][name] = 'Q14'
                 trap['electrodes']['Q14'][position] = position on the chip (just used for pretty plotting)
                 trap['electrodes']['Q14']['V'] = grid of potential values (should be a nx*ny*nz by 1 vector that will be reshaped properly)
+                
+        NOTES: 1. The X, Y, Z values should be in mm to give the conventional V/mm units for specifying multipoles.
+               2. The potential values are ordered as vary Z --> Y --> X.
         
         For HOA traps, this .pkl file can be made with the jupyter notebook import_data_HOA
 
@@ -258,6 +261,7 @@ class simulation:
             print ("ERROR: must expand the potential first")
             return
 
+        self.selected_multipoles = multipoles_toUse
         used_multipoles = []
         for i,b in enumerate(multipoles_toUse):
             if b:
@@ -301,7 +305,8 @@ class simulation:
     def print_cFile(self, fName=None):
         '''
         prints the current c file to a file for labrad to use, 
-            just a text file with a single column with (# rows) = (# electrodes)*(# multipoles) 
+            just a text file with a single column with (# rows) = (# electrodes)*(# multipoles).
+            note the order is multipole_coeffs[0] for electrodes[0..n], then multipole_coeffs[1] for electrodes[0..n] etc.
 
         takes an optional file name, otherwise just saves it as Cfile.txt
 
@@ -314,10 +319,38 @@ class simulation:
         indices = np.argsort(self.electrode_names)
         print (indices)
         mC = np.array(self.multipoleControl)
-        print (mC)
         for j in range(len(self.multipoleControl)):
             for i in indices:
                 np.savetxt(f, [mC[j,i]], delimiter=",")
+        f.close()
+        return
+
+    def print_cFile_general(self, fName=None):
+        '''
+        prints the current c file to a file as a text file with a single column with 
+            (# rows) = (# electrodes)*(# multipoles), listing multipole_coeffs[0..n] for electrode 0, then electrode 1...
+
+        The file header is 4 lines, giving the number and names of DC electrodes and which multipoles are used.
+        Takes an optional file name, otherwise just saves it as Cfile.txt.
+
+        ELECTRODES ARRANGED IN ALPHABETICAL ORDER
+
+        '''
+        if fName == None:
+            fName = 'Cfile_general.txt'
+        f = open(fName,'w')
+        indices = np.argsort(self.electrode_names)
+        print (indices)
+        multipoleControl_array = np.array(self.multipoleControl)
+        header_0 = 'There are ' + str(self.numElectrodes) + ' DC electrodes: \n'
+        header_1 = str(self.electrode_names[indices[0]:])[1:-1]
+        header_2 = '\nThe following ' + '{:n}'.format(np.sum(self.selected_multipoles)) + ' multipoles are constraint for each electrode in the above order: \n'
+        header_3 = str(self.selected_multipoles)
+        header = header_0 + header_1 + header_2 + header_3
+        cFile_gen = []
+        for electrode in indices:
+            cFile_gen = np.append(cFile_gen, multipoleControl_array[:,electrode])
+        np.savetxt(f, cFile_gen, delimiter=",", header = header)
         f.close()
         return
 
@@ -399,10 +432,8 @@ class simulation:
         fig,ax = plt.subplots(len(vs),1,figsize = (10,20))
         for i,v in enumerate(vs):
             coeffs = np.dot(self.multipole_expansions,v)
-            print (coeffs)
-            ax[i].bar(range(Nmulti),np.abs(coeffs))
+            ax[i].bar(range(Nmulti),coeffs)
             ax[i].set_title(names[i])
-            ax[i].set_yscale('log')
         plt.xticks(range(Nmulti), multipole_names, rotation = -90)
         plt.show()
         return
