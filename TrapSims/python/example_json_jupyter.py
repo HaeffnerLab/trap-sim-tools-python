@@ -115,6 +115,6 @@ plt.show()
 
 # %% scrolled=false
 #(6) print out the cFile for use in labrad
-s.print_cFile('Cfile_test.txt')# file includes *all* multipoles that should be available for the user in the gui.
+# s.print_cFile('Cfile_test.txt')# file includes *all* multipoles that should be available for the user in the gui.
 #(7) optional: print out the same cFile in slightly different format and includes header. Not useful for DAC
-# s.print_cFile_general('Cfile_test_general.txt')
+s.print_cFile_general('Cfile_test_general.txt')

@@ -341,6 +341,9 @@ class simulation:
         f = open(fName,'w')
         indices = np.argsort(self.electrode_names)
         print (indices)
+        if 'self.selected_multipoles' not in dir():
+            self.selected_multipoles = np.ones(9)
+        print (self.selected_multipoles)
         multipoleControl_array = np.array(self.multipoleControl)
         header_0 = 'There are ' + str(self.numElectrodes) + ' DC electrodes: \n'
         header_1 = str(self.electrode_names[indices[0]:])[1:-1]
