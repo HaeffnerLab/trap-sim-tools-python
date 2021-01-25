@@ -42,7 +42,7 @@ class MultipoleControl:
     # Below are all related to expansion order
 
     multipole_names = NamesUptoOrder2
-    multipole_print_names = PrintNamesUptoOrder2
+    multipole_print_names = pd.Series(PrintNamesUptoOrder2, index = multipole_names)
     normalization_factors = NormsUptoOrder2
 
     order = None
