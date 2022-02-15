@@ -19,7 +19,6 @@ import cvxpy as cvx
 class MultipoleControl:
 
     # List are all stored values after running the class.
-
     X = None
     Y = None
     Z = None
@@ -133,8 +132,18 @@ class MultipoleControl:
         trim_elecs = self.multipole_expansion[self.controlled_elecs]
         self.expansion_matrix = trim_elecs.loc[self.used_multipoles]
 
-        
-        self.pinv_matrix = pd.DataFrame(np.linalg.pinv(self.expansion_matrix), self.expansion_matrix.columns, self.expansion_matrix.index)
+        numpoles = len(used_multipoles)
+        soln_matrix = np.zeros((numpoles, len(controlled_electrodes)))
+        for i in np.arange(numpoles):
+            y = np.zeros(numpoles)
+            y[i] = 1
+            X = self.expansion_matrix
+            soln = self.min_linf(y, X)
+            soln_matrix[i] = soln
+
+        # self.pinv_matrix = pd.DataFrame(np.linalg.pinv(self.expansion_matrix), self.expansion_matrix.columns, self.expansion_matrix.index)
+        self.pinv_matrix = pd.DataFrame(np.transpose(soln_matrix), self.expansion_matrix.columns,
+                                        self.expansion_matrix.index)
         return self.expansion_matrix, self.pinv_matrix
 
     @staticmethod
@@ -220,6 +229,23 @@ class MultipoleControl:
 
         return output_roi
 
+
+    def write_txt(self,filename,strs,excl):
+        outarray = []
+        allmpl = ['Ex', 'Ey', 'Ez','U1', 'U2', 'U3', 'U4','U5']
+        for multipole in allmpl:
+            if multipole in self.pinv_matrix:
+                for key in strs:
+                    if key not in excl:
+                        outarray = np.append(outarray, self.pinv_matrix[multipole][key])
+                    elif excl[key] != "gnd":
+                        outarray = np.append(outarray, self.pinv_matrix[multipole][excl[key]])
+                    else:
+                        outarray = np.append(outarray, 0)
+            else:
+                outarray = np.append(outarray,np.zeros(21))
+        print(np.shape(outarray))
+        pd.DataFrame(outarray).to_csv(filename+'.txt', header=None, index=None, float_format='%.15f')
     @staticmethod
     def min_linf(y, X):
         '''
