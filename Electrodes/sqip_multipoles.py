@@ -3,33 +3,37 @@ import pickle
 # add multipoles package path
 import sys
 
-# sys.path.append('/Users/nem0x/Documents/Pyckages')
-sys.path.append('/Users/Ben/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub/trap_tools')
-sys.path.append(
-    '/Users/Ben/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub/ionLifetimes/bem/examples/SimpleTrap')
 from Electrodes.multipoles import MultipoleControl
 from plottingfuncns import *
 
 import numpy as np
 import pandas as pd
-from itertools import compress
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition, mark_inset, zoomed_inset_axes
-from ipywidgets import interactive, interact
-import ipywidgets as widgets
 
+from helper_functions import *
 
+fin = "vtks/htrapF_mega_short0.01_size100.0_DC1_mesh"
+strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
+fout = "htrap_example"
+pathgrid = './gridExample.pkl'
+
+fgrid = open(pathgrid, 'rb')
+grid = pickle.load(fgrid)
+
+write_pickle(fin,fout,grid,strs)
 # %% md
 # import data, and define parameters
 # %%
-path = '/Users/Ben/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub/ionLifetimes/bem/examples/SimpleTrap/htrap_simulation_1.pkl'
+path = './htrap_simulation_1.pkl'
+
 
 f = open(path, 'rb')
 trap = pickle.load(f)
-# %%
+
 zl = 3.7*72*1e-3
 xl = -0.051*72*1e-3
 yl = 1.06*72*1e-3
+
 position = [xl, yl, zl]
 nROI = 5
 roi = [nROI, nROI, nROI]
@@ -200,65 +204,65 @@ plot_U2(s,xl,zl,roi,height=75, ez=0, ex=0, ey=0, u2=40, u5=0, u1=0, u3=0)
 # output.layout.height = '1000px'
 # %%
 ##################### BREAK POINT- none of the code below this runs properly for me yet ###################
-a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-np.ravel(a, 'F')
-# %%
-multipole_names = ['Ey', 'Ez', 'Ex', 'U3', 'U2', 'U5', 'U1']
-height_list = [50,60,70,80,90,100]
-volts_all_heights = []
-for height in height_list:
-    position1 = [xl, height * 1e-3 ,zl]
-    s.update_origin_roi(position1, roi)
-    volts_all_elecs = []
-    for multip in multipole_names:
-        multipole_coeffs = {'Ey': 0, 'Ez': 0, 'Ex': 0, 'U3': 0, 'U2': 0, 'U5': 0, 'U1': 0}
-        multipole_coeffs[multip] = 1
-        voltages = s.setMultipoles(multipole_coeffs)
-        volts_all_elecs.append(voltages.values)
-    volts_all_heights.append(np.ravel(volts_all_elecs, order='C'))
-volts_all_heights = np.transpose(volts_all_heights)
-# %%
-volts_all_heights.shape
-# %%
-import csv
-
-header1 = ['multipoles: Ey, Ez, Ex, U3, U2, U5, U1']
-header2 = ['default position: 100']
-with open('3d_trap14_cfile.csv', 'w', newline='') as csvfile:
-    cfile = csv.writer(csvfile, delimiter=' ', escapechar=' ', quoting=csv.QUOTE_NONE)
-    cfile.writerow(header1)
-    cfile.writerow(header2)
-    cfile.writerows(list(volts_all_heights))
-    cfile.writerow(height_list)
-# %%
-cfile_path = '3d_trap14_cfile.csv'
-cfile_text = open(cfile_path).read().split('\n')[:-1]
-# %%
-cfile_text[0].split('ultipoles:')[1].replace(' ', '').split(',')
-# %%
-cfile_text
-# %%
-
-# %%
-height_list1 = np.arange(80, 201, 1)
-m_ca = 6.66e-26
-omega_rf = 2 * np.pi * 52.05e6
-e = 1.6e-19
-v_per_mhz = []
-for height in height_list1:
-    position1 = [xl,height * 1e-3,zl]
-    s.update_origin_roi(position1, roi)
-    rf_quad = (s.multipole_expansion['RF2']['U3'] - s.multipole_expansion['RF1']['U3']) / 2 * 1e6
-    v_per_mhz.append(m_ca * omega_rf * 2 * np.pi / np.sqrt(2) / rf_quad / e * 1e6)
-# %%
-s.update_origin_roi([xl, yl, zl], roi)
-# s.multipole_expansion['RF1']['U3']
-# %%
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(height_list1, v_per_mhz)
-ax.set_ylim(6, 14)
-size = 16
-ax.tick_params(labelsize=size)
-ax.set_ylabel('voltage(v) / secular frequency (MHz)', fontsize=size)
-ax.set_xlabel('distance from substrate (um)', fontsize=size)
-# %%
+# a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# np.ravel(a, 'F')
+# # %%
+# multipole_names = ['Ey', 'Ez', 'Ex', 'U3', 'U2', 'U5', 'U1']
+# height_list = [50,60,70,80,90,100]
+# volts_all_heights = []
+# for height in height_list:
+#     position1 = [xl, height * 1e-3 ,zl]
+#     s.update_origin_roi(position1, roi)
+#     volts_all_elecs = []
+#     for multip in multipole_names:
+#         multipole_coeffs = {'Ey': 0, 'Ez': 0, 'Ex': 0, 'U3': 0, 'U2': 0, 'U5': 0, 'U1': 0}
+#         multipole_coeffs[multip] = 1
+#         voltages = s.setMultipoles(multipole_coeffs)
+#         volts_all_elecs.append(voltages.values)
+#     volts_all_heights.append(np.ravel(volts_all_elecs, order='C'))
+# volts_all_heights = np.transpose(volts_all_heights)
+# # %%
+# volts_all_heights.shape
+# # %%
+# import csv
+#
+# header1 = ['multipoles: Ey, Ez, Ex, U3, U2, U5, U1']
+# header2 = ['default position: 100']
+# with open('3d_trap14_cfile.csv', 'w', newline='') as csvfile:
+#     cfile = csv.writer(csvfile, delimiter=' ', escapechar=' ', quoting=csv.QUOTE_NONE)
+#     cfile.writerow(header1)
+#     cfile.writerow(header2)
+#     cfile.writerows(list(volts_all_heights))
+#     cfile.writerow(height_list)
+# # %%
+# cfile_path = '3d_trap14_cfile.csv'
+# cfile_text = open(cfile_path).read().split('\n')[:-1]
+# # %%
+# cfile_text[0].split('ultipoles:')[1].replace(' ', '').split(',')
+# # %%
+# cfile_text
+# # %%
+#
+# # %%
+# height_list1 = np.arange(80, 201, 1)
+# m_ca = 6.66e-26
+# omega_rf = 2 * np.pi * 52.05e6
+# e = 1.6e-19
+# v_per_mhz = []
+# for height in height_list1:
+#     position1 = [xl,height * 1e-3,zl]
+#     s.update_origin_roi(position1, roi)
+#     rf_quad = (s.multipole_expansion['RF2']['U3'] - s.multipole_expansion['RF1']['U3']) / 2 * 1e6
+#     v_per_mhz.append(m_ca * omega_rf * 2 * np.pi / np.sqrt(2) / rf_quad / e * 1e6)
+# # %%
+# s.update_origin_roi([xl, yl, zl], roi)
+# # s.multipole_expansion['RF1']['U3']
+# # %%
+# fig, ax = plt.subplots(figsize=(10, 6))
+# ax.plot(height_list1, v_per_mhz)
+# ax.set_ylim(6, 14)
+# size = 16
+# ax.tick_params(labelsize=size)
+# ax.set_ylabel('voltage(v) / secular frequency (MHz)', fontsize=size)
+# ax.set_xlabel('distance from substrate (um)', fontsize=size)
+# # %%
