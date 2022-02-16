@@ -77,14 +77,8 @@ nROI = 5
 roi = [nROI, nROI, nROI]
 order = 2
 
-#I had to do this to make it compatible w/shuqi's code
-trap['Z'] = np.array(trap['Z'])
-trap['X'] = np.array(trap['X'])
-trap['Y'] = np.array(trap['Y'])
-
 #controlled electrodes- this will define which electrodes will be used to control your trap
 controlled_electrodes = []
-
 
 #new from shuqi's code- 'excl' defines a dictionary of excluded electrodes
 #the dictionary index (left of colon) is the electrode you want to exclude
