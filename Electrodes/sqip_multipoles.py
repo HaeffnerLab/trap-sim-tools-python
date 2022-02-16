@@ -1,7 +1,6 @@
 # %%
 import pickle
 # add multipoles package path
-import sys
 
 from Electrodes.multipoles import MultipoleControl
 from plottingfuncns import *
@@ -10,39 +9,89 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from helper_functions import *
 
-fin = "vtks/htrapF_mega_short0.01_size100.0_DC1_mesh"
-strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
-fout = "htrap_example"
-pathgrid = './gridExample.pkl'
+######## example of writing pickle file ###################
+#THIS REQUIRES the bem package- I can only get it to run if I use
+#the conda environment set up for bem (python 3.6... see bem repo for setup).
+#Also please amend line 5 of the 'helper_functions' code so that it points to
+#your bem location
 
-fgrid = open(pathgrid, 'rb')
-grid = pickle.load(fgrid)
+#The rest of the code should work with any version of python3 (I'm using 3.7).
+# You do have to install cvx/cvxpy (for ex, using pip)
 
-write_pickle(fin,fout,grid,strs)
-# %% md
+# #fin = the vtk file extension that will be used to read in vtk files
+# from helper_functions import *
+#
+# #these contain the field simulations for each electrode
+# fin = "./vtks/htrapF_mega_short0.002_size100.0"
+#
+# #strs are the string names of your DC electrodes
+# strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
+#
+# #this is the grid that gives the locations of the simulated potentials in the example
+# pathgrid = './gridExample.pkl'
+#
+# #fout is the name of the output pickle file that you will write to
+# fout = "htrap_example"
+#
+# #load in the example grid
+# fgrid = open(pathgrid, 'rb')
+# grid = pickle.load(fgrid)
+#
+# #use the write pickle function in the 'helper_functions' library to read trap solutions,
+# #format them so that they can be read into Sara's/Shuqi's code, and save them to an
+# #output pickle file.
+# write_pickle(fin,fout,grid,strs)
+
+######## end of pickle writing code #########################
+
+
+######## beginning of multipole expansion code ##############
+
+###### loading in pickle file ###############################
 # import data, and define parameters
-# %%
-path = './htrap_simulation_1.pkl'
-
-
+path = './htrap_example.pkl'
 f = open(path, 'rb')
 trap = pickle.load(f)
+#############################################################
 
+
+###### setting up multipole expansion @ trap location #######
+#xl, yl, zl define the origin at which we will do the multipole expansion
+#i.e. they define where you want to trap
+
+#strs are the string names of your DC electrodes (copy from loading pickle,
+#I wrote it a second time so that the code runs in case you comment out that code)
+strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
 zl = 3.7*72*1e-3
 xl = -0.051*72*1e-3
 yl = 1.06*72*1e-3
 
 position = [xl, yl, zl]
+
+#ROI = 'range of interest', I believe
+#It defines the volume region over which multipole expansion will be performed.
+#nROI is the number of points that make up the dimensions of the volume of the ROI
+#I believe it ends up being the indices of the 3-d array that you index so it is dimensionless
 nROI = 5
 roi = [nROI, nROI, nROI]
 order = 2
+
+#I had to do this to make it compatible w/shuqi's code
 trap['Z'] = np.array(trap['Z'])
 trap['X'] = np.array(trap['X'])
 trap['Y'] = np.array(trap['Y'])
+
+#controlled electrodes- this will define which electrodes will be used to control your trap
 controlled_electrodes = []
-strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
+
+
+#new from shuqi's code- 'excl' defines a dictionary of excluded electrodes
+#the dictionary index (left of colon) is the electrode you want to exclude
+#its value (right of colon) defines what you want to set it to
+#if you set it to "gnd" it will always set the voltage of that DC to 0
+#if you set it to "DCx" it will always set the voltage of that DC to be the same as DCx
+#this is in case you have trap shorts, if you don't need it just don't include the indices
 excl = {
     "DC6": "gnd",
         "DC4": "gnd",
@@ -52,6 +101,8 @@ excl = {
         "DC11": "gnd",
         "DC12": "gnd"
 }
+
+#build the controlled electrodes list, given the constraints of the 'excl' list
 for electrode in strs:
     if electrode in excl and excl[electrode] != "gnd":
         trap['electrodes'][excl[electrode]]["potential"] = trap['electrodes'][excl[electrode]]["potential"] + \
@@ -59,21 +110,31 @@ for electrode in strs:
     elif electrode not in excl:
         controlled_electrodes.append(electrode)
 
+
+#which multipoles you want to include in multipole calculations
 used_order1multipoles = ['Ex', 'Ey', 'Ez']
-used_order2multipoles = ['U1', 'U2', 'U3', 'U5']
+used_order2multipoles = ['U1', 'U2', 'U3', 'U4','U5']
 used_multipoles = used_order1multipoles + used_order2multipoles
 print(used_multipoles)
-position = np.array(position)
 
-x0_ind = (np.abs(trap['X'] - position[0])).argmin()
-y0_ind = (np.abs(trap['Y'] - position[1])).argmin()
-z0_ind = (np.abs(trap['Z'] - position[2])).argmin()
-# %% md
-# create object
-# %%
-print(trap['Y'])
-# %%
+
+# create MultipoleControl object
 s = MultipoleControl(trap, position, roi, controlled_electrodes, used_multipoles, order)
+###############################################################
+
+
+################# writing to cfile ############################
+#write solution text file (cfile, sqip uses .txt format tho)
+#this will be generated in the 'Electrodes' directory
+s.write_txt('el3_4-5-6-8-11-12-gnd_13-14', strs, excl)
+###############################################################
+
+
+
+########## various plots of the expansion fields ##############
+### TO DO: comments, checking multipoles generated, add RF electrode
+# code to the bottom
+
 print('Multipole names:', s.multipole_names)
 print('Normalization factors:', s.normalization_factors)
 # %%
@@ -88,16 +149,9 @@ for ele in s.electrode_names:
     v[ele] = 1
     vs.append(v)
 
-
-# print vs
-
-
-
-
 # plot_multipole_vs_expansion_height(5)
-# %% md
 # plot multipole coefficients vs different heights for each electrode
-# %%
+
 height_list = np.round(trap['Y'][nROI:] * 1e3)
 numMUltipoles = len(s.multipole_print_names)
 ne = len(s.electrode_names)
@@ -110,10 +164,6 @@ for i, height in enumerate(height_list):
 
 size = 15
 fig, ax = plt.subplots(numMUltipoles, 1, figsize=(20, 60))
-
-
-
-
 
 for i, mul in enumerate(s.multipole_print_names):
     for j, ele in enumerate(s.electrode_names[0:1]):
@@ -128,9 +178,6 @@ for i, mul in enumerate(s.multipole_print_names):
 
 fig.canvas.draw()
 fig.tight_layout(pad=1)
-
-
-
 
 plot_muls(s,xl,zl,roi,height= 75, ez=0, ex=0, ey=0,u2=10, u5=0, u1=0, u3=0)
 # %% md
@@ -190,13 +237,11 @@ secax = ax2.secondary_yaxis('right', functions=(U2_to_mhz, mhz_to_U2))
 secax.tick_params(labelsize=size, colors='#ff7f0e')
 secax.set_ylabel('$Ca^{+}$ trap frequency (MHz)', fontsize=size, color='#ff7f0e')
 
-
 # plt.savefig('Multipole_coeffs_20v_rfbias.jpg', format = 'jpg', dpi = 300)
 
 plot_1d(s,xl,zl,roi,height=75, ez=0, ex=0, ey=0, u2=10,u5=0, u1=0, u3=0)
 # %%
 outarray = []
-s.write_txt('el3_4-5-6-8-11-12-gnd_13-14', strs, excl)
 
 
 plot_U2(s,xl,zl,roi,height=75, ez=0, ex=0, ey=0, u2=40, u5=0, u1=0, u3=0)

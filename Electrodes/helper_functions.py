@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import sys
+sys.path.append('/Users/Ben/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub/ionLifetimes/bem')
 from bem.formats import stl
 import os
 from scipy.signal import argrelextrema
 from bem import Result
+import pickle
 
 def load_file(Mesh,Electrodes,prefix,scale,use_stl=True):
     if not use_stl:
@@ -340,7 +343,6 @@ def write_pickle(fin,fout,grid,strs):
     #grid is the field grid pts that give the locations of each simulated potential point
     #fin is the filename of the of the input vtk sim files
     #fout is the filename of the pickle you want to save to
-    import pickle
     x, y, z = grid.to_xyz()
     nx = len(x)
     ny = len(y)
@@ -351,7 +353,6 @@ def write_pickle(fin,fout,grid,strs):
             'Y': y,
             'Z': z}
     i = 0
-    strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
     result0 = Result.from_vtk(fin, 'DC1')
     p0 = result0.potential
     for ele in strs:

@@ -2,117 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7247f8c5-9a99-4ed5-bffa-9a15d9bf6586" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Electrodes/gridExample.pkl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/htrap_simulation_1.pkl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC1.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC12.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC12_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC14.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC14_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC16.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC16_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.001_size100.0_DC1_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC0.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC0_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC1.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC10.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC10_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC11.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC11_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC12.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC12_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC13.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC13_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC14.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC14_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC15.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC15_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC16.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC16_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC17.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC17_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC18.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC18_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC19.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC19_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC1_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC2.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC20.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC20_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC21.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC21_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC2_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC3.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC3_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC4.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC4_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC5.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC5_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC6.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC6_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC7.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC7_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC8.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC8_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC9.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_DC9_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_RF.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_RF_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC0.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC0_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC1.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC10.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC10_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC11.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC11_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC12.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC12_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC13.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC13_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC14.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC14_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC15.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC15_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC16.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC16_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC17.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC17_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC18.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC18_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC19.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC19_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC1_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC2.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC20.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC20_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC21.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC21_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC2_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC3.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC3_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC4.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC4_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC5.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC5_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC6.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC6_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC7.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC7_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC8.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC8_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC9.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_DC9_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_RF.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.005_size100.0_RF_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.01_size100.0_DC14.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.01_size100.0_DC14_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.01_size100.0_DC16.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.01_size100.0_DC16_mesh.vtk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.01_size100.0_DC1_mesh.vtk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/trap_tools.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/trap_tools.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Electrodes/el3_4-5-6-8-11-12-gnd_13-14.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Electrodes/el3_4-5-6-8-11-12-gnd_13-14.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Electrodes/helper_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/Electrodes/helper_functions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Electrodes/htrap_simulation_1.pkl" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Electrodes/sqip_multipoles.py" beforeDir="false" afterPath="$PROJECT_DIR$/Electrodes/sqip_multipoles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sqip_multipoles.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/sqip_multipoles.ipynb" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -123,46 +19,25 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Electrodes/expansion.py">
+        <entry file="file://$PROJECT_DIR$/Electrodes/helper_functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="235">
-              <caret line="56" column="72" selection-start-line="56" selection-start-column="72" selection-end-line="56" selection-end-column="72" />
+            <state relative-caret-position="150">
+              <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
               <folding>
-                <element signature="e#4631#4740#0" />
+                <element signature="e#0#18#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Electrodes/helper_functions.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="202">
-              <caret line="346" column="15" lean-forward="true" selection-start-line="346" selection-start-column="15" selection-end-line="346" selection-end-column="15" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Electrodes/plottingfuncns.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="199">
-              <caret line="90" column="4" selection-start-line="90" selection-start-column="4" selection-end-line="90" selection-end-column="4" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Electrodes/sqip_multipoles.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="109">
-              <caret line="12" selection-start-line="12" selection-end-line="12" />
+            <state relative-caret-position="127">
+              <caret line="33" column="46" lean-forward="true" selection-start-line="33" selection-start-column="46" selection-end-line="33" selection-end-column="46" />
+              <folding>
+                <element signature="e#5#18#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -170,8 +45,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Electrodes/multipoles.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="314">
-              <caret line="167" column="42" selection-start-line="167" selection-start-column="26" selection-end-line="167" selection-end-column="46" />
+            <state relative-caret-position="3480">
+              <caret line="232" column="8" selection-start-line="232" selection-start-column="8" selection-end-line="232" selection-end-column="8" />
+              <folding>
+                <element signature="e#89#107#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -187,14 +65,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>w</find>
-      <find>plot_u2</find>
-      <find>if key not in</find>
-      <find>nROI</find>
-      <find>s.</find>
-      <find>pinv_matrix =</find>
-      <find>min_linf</find>
-      <find>update</find>
       <find>pinv_</find>
       <find>self.used_</find>
       <find>pinv</find>
@@ -209,14 +79,22 @@
       <find>height_list1 =</find>
       <find>height_list =</find>
       <find>plot_multipole</find>
-      <find>c</find>
       <find>plot</find>
       <find>interactive_plot</find>
       <find>position</find>
-      <find>scale =</find>
       <find>s = (s</find>
       <find>plot_</find>
       <find>stl.</find>
+      <find>Result</find>
+      <find>scale =</find>
+      <find>Result.from_vtk</find>
+      <find>origin =</find>
+      <find>sys</find>
+      <find>x0_ind</find>
+      <find>write_</find>
+      <find>c</find>
+      <find>strs</find>
+      <find>write_pickle(</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -239,8 +117,8 @@
     <auto-save>true</auto-save>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="187" />
-    <option name="y" value="23" />
+    <option name="x" value="98" />
+    <option name="y" value="110" />
     <option name="width" value="1292" />
     <option name="height" value="718" />
   </component>
@@ -274,7 +152,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/Electrodes" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -328,9 +206,9 @@
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="" />
+      <option name="SDK_HOME" value="$USER_HOME$/opt/anaconda3/bin/python" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Electrodes" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
@@ -343,6 +221,10 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.plottingfuncns" />
+      <item itemvalue="Python.sqip_multipoles" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.sqip_multipoles" />
@@ -367,23 +249,23 @@
       <workItem from="1644433170635" duration="39000" />
       <workItem from="1644433500974" duration="3844000" />
       <workItem from="1644444681011" duration="35048000" />
-      <workItem from="1644860082368" duration="5938000" />
+      <workItem from="1644860082368" duration="10653000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="53455000" />
+    <option name="totallyTimeSpent" value="58170000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="187" y="23" width="1292" height="718" extended-state="0" />
+    <frame x="98" y="110" width="1292" height="718" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2152" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.3136" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3514377" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.3514377" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.399361" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -398,7 +280,7 @@
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="SciView" order="3" visible="true" weight="0.1264" />
+      <window_info active="true" anchor="right" id="SciView" order="3" visible="true" weight="0.1832" />
       <window_info anchor="right" id="Database" order="4" />
     </layout>
   </component>
@@ -410,62 +292,109 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Electrodes/sqip_multipoles.py</url>
-          <line>201</line>
+          <line>246</line>
           <option name="timeStamp" value="19" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Electrodes/helper_functions.py</url>
+          <line>355</line>
+          <option name="timeStamp" value="23" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/opt/anaconda3/envs/py3bem/lib/python3.6/site-packages/pyfastlap-0.0+dev-py3.6-macosx-10.9-x86_64.egg/bem/electrostatics.py</url>
+          <line>88</line>
+          <option name="timeStamp" value="24" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/trap_tools$sqip_multipoles.coverage" NAME="sqip_multipoles Coverage Results" MODIFIED="1644967896876" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Electrodes" />
+    <SUITE FILE_PATH="coverage/trap_tools$sqip_multipoles.coverage" NAME="sqip_multipoles Coverage Results" MODIFIED="1644972887616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Electrodes" />
     <SUITE FILE_PATH="coverage/trap_tools$plottingfuncns.coverage" NAME="plottingfuncns Coverage Results" MODIFIED="1644859765515" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Electrodes" />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
       <expression>
-        <expression-string>numpoles</expression-string>
+        <expression-string>fin</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>len(controlled_electrodes)</expression-string>
+        <expression-string>Result.from_vtk(fin,'_DC12')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>controlled_electrodes</expression-string>
+        <expression-string>Result.from_vtk(fin,'DC12')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self.Y_roi</expression-string>
+        <expression-string>Result.from_vtk(fin,'DC1')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self.origin</expression-string>
+        <expression-string>Result.from_vtk(fin,'DC1_mesh')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self.X_roi</expression-string>
+        <expression-string>Result.from_vtk(fin,'DC2')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>zl</expression-string>
+        <expression-string>Result.from_vtk('./vtks/','DC2')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>yl</expression-string>
+        <expression-string>Result.from_vtk('./vtks','DC2')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>xl</expression-string>
+        <expression-string>Result.from_vtk('','DC2')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+    </expressions>
+    <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>Result.from_vtk(fin,'DC14')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>Result.from_vtk(fin,'DC12')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>Result.from_vtk(fin,'DC16')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>Result.from_vtk(fin,'DC11')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>Result.from_vtk(fin,'DC13')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>Result.from_vtk(fin,'DC1')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>Result.from_vtk(fin+'_','DC1')</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
@@ -489,10 +418,19 @@
     <entry file="file://$PROJECT_DIR$/Electrodes/3d_trap14_cfile.csv">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/Electrodes/multipoles.py">
+    <entry file="file://$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_RF.vtk">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sqip_multipoles.ipynb">
+      <provider selected="true" editor-type-id="jupyter-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Electrodes/plottingfuncns.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="314">
-          <caret line="167" column="42" selection-start-line="167" selection-start-column="26" selection-end-line="167" selection-end-column="46" />
+        <state relative-caret-position="199">
+          <caret line="90" column="4" selection-start-line="90" selection-start-column="4" selection-end-line="90" selection-end-column="4" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -506,35 +444,46 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Electrodes/vtks/htrapF_mega_short0.002_size100.0_RF.vtk">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Electrodes/plottingfuncns.py">
+    <entry file="file://$USER_HOME$/opt/anaconda3/lib/python3.7/pickle.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="199">
-          <caret line="90" column="4" selection-start-line="90" selection-start-column="4" selection-end-line="90" selection-end-column="4" />
+        <state relative-caret-position="3008">
+          <caret line="1619" column="17" selection-start-line="1619" selection-start-column="17" selection-end-line="1619" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/opt/anaconda3/envs/py3bem/lib/python3.6/site-packages/pyfastlap-0.0+dev-py3.6-macosx-10.9-x86_64.egg/bem/electrostatics.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="101" selection-start-line="101" selection-end-line="101" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Electrodes/multipoles.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3480">
+          <caret line="232" column="8" selection-start-line="232" selection-start-column="8" selection-end-line="232" selection-end-column="8" />
+          <folding>
+            <element signature="e#89#107#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Electrodes/helper_functions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sqip_multipoles.ipynb">
-      <provider selected="true" editor-type-id="jupyter-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/Electrodes/sqip_multipoles.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="109">
-          <caret line="12" selection-start-line="12" selection-end-line="12" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Electrodes/helper_functions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="202">
-          <caret line="346" column="15" lean-forward="true" selection-start-line="346" selection-start-column="15" selection-end-line="346" selection-end-column="15" />
+        <state relative-caret-position="127">
+          <caret line="33" column="46" lean-forward="true" selection-start-line="33" selection-start-column="46" selection-end-line="33" selection-end-column="46" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#5#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
