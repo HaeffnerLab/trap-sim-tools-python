@@ -8,8 +8,8 @@ resuls from BEM simulations.
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-from .expansion import spher_harm_expansion, spher_harm_cmp, nullspace, NamesUptoOrder2, PrintNamesUptoOrder2, NormsUptoOrder2
-from .optimsaddle import exact_saddle, find_saddle
+from expansion import spher_harm_expansion, spher_harm_cmp, nullspace, NamesUptoOrder2, PrintNamesUptoOrder2, NormsUptoOrder2
+from optimsaddle import exact_saddle, find_saddle
 import pickle
 import matplotlib.pyplot as plt
 from matplotlib import cm

@@ -2,13 +2,13 @@
 import pickle
 # add multipoles package path
 
-from Electrodes.multipoles import MultipoleControl
+from multipoles import MultipoleControl
 from plottingfuncns import *
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
-
 
 ######## example of writing pickle file ###################
 #THIS REQUIRES the bem package- I can only get it to run if I use
@@ -50,7 +50,7 @@ import matplotlib.pyplot as plt
 
 ###### loading in pickle file ###############################
 # import data, and define parameters
-path = './htrap_simulation_1_el4.pkl'
+path = './Electrodes/htrap_simulation_1_el3.5.pkl'
 f = open(path, 'rb')
 trap = pickle.load(f)
 #############################################################
@@ -63,7 +63,7 @@ trap = pickle.load(f)
 #strs are the string names of your DC electrodes (copy from loading pickle,
 #I wrote it a second time so that the code runs in case you comment out that code)
 strs = "DC1 DC2 DC3 DC4 DC5 DC6 DC7 DC8 DC9 DC10 DC11 DC12 DC13 DC14 DC15 DC16 DC17 DC18 DC19 DC20 DC21".split()
-zl = 1.35*72*1e-3
+zl = 3.1*72*1e-3
 xl = -0.051*72*1e-3
 yl = 1.06*72*1e-3
 
@@ -107,7 +107,7 @@ for electrode in strs:
 
 #which multipoles you want to include in multipole calculations
 used_order1multipoles = ['Ex', 'Ey', 'Ez']
-used_order2multipoles = ['U1', 'U2', 'U3']
+used_order2multipoles = ['U1', 'U2', 'U3','U5']
 used_multipoles = used_order1multipoles + used_order2multipoles
 print(used_multipoles)
 
@@ -120,7 +120,7 @@ s = MultipoleControl(trap, position, roi, controlled_electrodes, used_multipoles
 ################# writing to cfile ############################
 #write solution text file (cfile, sqip uses .txt format tho)
 #this will be generated in the 'Electrodes' directory
-s.write_txt('el4_4-5-6-8-11-12-gnd_13-14(feb2022_noU4)', strs, excl)
+s.write_txt('Electrodes/el3.5_4-5-6-8-11-12-gnd_13-14(feb2022_noU4)', strs, excl)
 ###############################################################
 
 
