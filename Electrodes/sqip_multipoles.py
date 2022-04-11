@@ -87,13 +87,13 @@ controlled_electrodes = []
 #if you set it to "DCx" it will always set the voltage of that DC to be the same as DCx
 #this is in case you have trap shorts, if you don't need it just don't include the indices
 excl = {
-    "DC6": "gnd",
-        "DC4": "gnd",
-        "DC5": "gnd",
-        "DC8": "gnd",
-        "DC14": "DC13",
-        "DC11": "gnd",
-        "DC12": "gnd"
+    # "DC6": "gnd",
+    #     "DC4": "gnd",
+    #     "DC5": "gnd",
+    #     "DC8": "gnd",
+    #     "DC14": "DC13",
+    #     "DC11": "gnd",
+    #     "DC12": "gnd"
 }
 
 #build the controlled electrodes list, given the constraints of the 'excl' list
@@ -107,7 +107,7 @@ for electrode in strs:
 
 #which multipoles you want to include in multipole calculations
 used_order1multipoles = ['Ex', 'Ey', 'Ez']
-used_order2multipoles = ['U1', 'U2', 'U3','U5']
+used_order2multipoles = ['U1', 'U2', 'U3','U4','U5']
 used_multipoles = used_order1multipoles + used_order2multipoles
 print(used_multipoles)
 
