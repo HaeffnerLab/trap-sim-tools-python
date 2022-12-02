@@ -1,5 +1,7 @@
 trap-sim-tools-python
 =====================
+Update 12/2/22: The up-to-date tools for multipole decomposition, matrix inverse, csv file writing (the csv file that maps multipoles to DC voltages) is stored in the 'PaulTrapAnalysis' repository. Please use 'PaulTrapAnalysis' to update multipole code, this repository only exists as a reference for old code and may someday be deleted.
+
 Update 7/7/14: Please see project_parameters as an abridged tutorial. Just fill it out as it describes and then run analyze_trap.
 
 UPDATE 6/25/14: The project_parameters and all_functions have been significantly updated. The scripts post_process_trap,
